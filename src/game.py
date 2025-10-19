@@ -16,13 +16,17 @@ class QuantumPoker:
     Main game class that manages the poker game with quantum mechanics.
     """
 
-    def __init__(self, num_players: int):
+    def __init__(self, num_players: int, starting_chips: int = 1000, small_blind: int = 10, big_blind: int = 20):
         if num_players < 2 or num_players > 10:
             raise ValueError("Number of players must be between 2 and 10")
 
         self.num_players = num_players
+        self.starting_chips = starting_chips
+        self.small_blind = small_blind
+        self.big_blind = big_blind
+        
         self.players: List[Player] = [
-            Player(f"Player {i+1}", i + 1) for i in range(num_players)
+            Player(f"Player {i+1}", i + 1, starting_chips=starting_chips) for i in range(num_players)
         ]
 
         # Initialize quantum circuit manager
@@ -50,6 +54,11 @@ class QuantumPoker:
 
         # Deck index for dealing
         self.deck_index = 0
+        
+        # Session tracking
+        self.hand_number = 0
+        self.session_active = False
+        self.hands_played = 0
 
     def shuffle_deck(self):
         """Shuffle the deck randomly."""
@@ -369,6 +378,14 @@ class QuantumPoker:
         self.deck_index = 0
         self.shuffle_deck()
         
+        # Reset quantum circuit for new hand
+        self.qc_manager = QuantumPokerCircuit()
+        
+        # Reset community cards
+        self.flop = [None, None, None]
+        self.turn = None
+        self.river = None
+        
         # Deal hole cards
         print("\nDealing hole cards...")
         self.deal_hole_cards()
@@ -657,6 +674,122 @@ class QuantumPoker:
         Get visual representation of the quantum circuit.
         """
         return self.qc_manager.get_circuit_diagram()
+    
+    # ============================================================================
+    # Session Management
+    # ============================================================================
+    
+    def start_session(self):
+        """Start a new game session."""
+        self.session_active = True
+        self.hands_played = 0
+        self.hand_number = 0
+        print(f"🎮 Game session started with {self.num_players} players")
+        print(f"   Starting chips: {self.starting_chips}")
+        print(f"   Blinds: {self.small_blind}/{self.big_blind}")
+    
+    def play_next_hand(self) -> Optional[Dict]:
+        """
+        Play the next hand in the session.
+        
+        Returns:
+            Hand result dict, or None if session should end
+        """
+        if not self.session_active:
+            raise ValueError("Session not started. Call start_session() first.")
+        
+        # Check if we have enough players
+        active_players = [p for p in self.players if p.chips > 0 and not p.folded]
+        if len(active_players) < 2:
+            print(f"\n🏁 Game over! Only {len(active_players)} player(s) remaining.")
+            self.end_session()
+            return None
+        
+        self.hand_number += 1
+        print(f"\n{'='*60}")
+        print(f"HAND #{self.hand_number}")
+        print(f"{'='*60}")
+        
+        # Rotate dealer button
+        if self.hand_number > 1:
+            self._rotate_dealer()
+        
+        # Show chip stacks
+        print("\nChip Stacks:")
+        for player in self.players:
+            if player.chips > 0:
+                print(f"  {player.name}: {player.chips} chips")
+        
+        # Play hand
+        result = self.play_hand(self.small_blind, self.big_blind)
+        self.hands_played += 1
+        
+        return result
+    
+    def _rotate_dealer(self):
+        """Rotate dealer button to next active player."""
+        initial_dealer = self.dealer_position
+        
+        while True:
+            self.dealer_position = (self.dealer_position + 1) % self.num_players
+            
+            # Find player with chips
+            dealer_player = self.players[self.dealer_position]
+            if dealer_player.chips > 0:
+                break
+            
+            # Prevent infinite loop
+            if self.dealer_position == initial_dealer:
+                break
+        
+        dealer_player = self.players[self.dealer_position]
+        print(f"🔘 Dealer: {dealer_player.name}")
+    
+    def end_session(self):
+        """End the current session."""
+        self.session_active = False
+        
+        print(f"\n{'='*60}")
+        print("GAME SESSION ENDED")
+        print(f"{'='*60}")
+        print(f"Hands played: {self.hands_played}")
+        
+        # Sort players by chips
+        sorted_players = sorted(self.players, key=lambda p: p.chips, reverse=True)
+        
+        print("\nFinal Standings:")
+        for i, player in enumerate(sorted_players, 1):
+            profit = player.chips - self.starting_chips
+            profit_str = f"+{profit}" if profit > 0 else str(profit)
+            print(f"  {i}. {player.name}: {player.chips} chips ({profit_str})")
+        
+        winner = sorted_players[0]
+        print(f"\n🏆 Winner: {winner.name} with {winner.chips} chips!")
+    
+    def get_session_stats(self) -> Dict:
+        """Get session statistics."""
+        active_players = sum(1 for p in self.players if p.chips > 0)
+        eliminated_players = self.num_players - active_players
+        
+        player_stats = []
+        for player in self.players:
+            profit = player.chips - self.starting_chips
+            player_stats.append({
+                "name": player.name,
+                "number": player.number,
+                "chips": player.chips,
+                "profit": profit,
+                "active": player.chips > 0
+            })
+        
+        return {
+            "hand_number": self.hand_number,
+            "hands_played": self.hands_played,
+            "active_players": active_players,
+            "eliminated_players": eliminated_players,
+            "session_active": self.session_active,
+            "player_stats": player_stats
+        }
 
 
 def example_game():
