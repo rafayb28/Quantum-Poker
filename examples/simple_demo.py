@@ -1,8 +1,8 @@
 import qiskit
 import random
 
-from card import Card, SUITS, RANKS
-from player import Player
+from src.card import Card, SUITS, RANKS
+from src.player import Player
 
 
 class Poker:

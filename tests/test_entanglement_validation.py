@@ -3,7 +3,8 @@ Test to understand which cards create invalid values when entangled
 """
 
 import sys
-sys.path.insert(0, '..')
+
+sys.path.insert(0, "..")
 
 from src.card import Card, RANKS
 
@@ -14,19 +15,21 @@ print("=" * 70)
 for rank_name, rank_bits in RANKS.items():
     print(f"\n{rank_name} (value {rank_bits:04b} = {rank_bits})")
     print("-" * 70)
-    
+
     for bit in range(4):
         # Flip the bit to see possible outcomes
         flipped = rank_bits ^ (1 << bit)
-        
+
         # Check if both original and flipped are valid (1-13)
         original_valid = 1 <= rank_bits <= 13
         flipped_valid = 1 <= flipped <= 13
-        
+
         status = "✓ SAFE" if (original_valid and flipped_valid) else "✗ UNSAFE"
-        
-        print(f"  Bit {bit} (±{1 << bit}): {rank_bits:04b} ↔ {flipped:04b}  "
-              f"({rank_bits} ↔ {flipped})  {status}")
+
+        print(
+            f"  Bit {bit} (±{1 << bit}): {rank_bits:04b} ↔ {flipped:04b}  "
+            f"({rank_bits} ↔ {flipped})  {status}"
+        )
 
 print("\n" + "=" * 70)
 print("\nSummary:")

@@ -16,7 +16,13 @@ class QuantumPoker:
     Main game class that manages the poker game with quantum mechanics.
     """
 
-    def __init__(self, num_players: int, starting_chips: int = 1000, small_blind: int = 10, big_blind: int = 20):
+    def __init__(
+        self,
+        num_players: int,
+        starting_chips: int = 1000,
+        small_blind: int = 10,
+        big_blind: int = 20,
+    ):
         if num_players < 2 or num_players > 10:
             raise ValueError("Number of players must be between 2 and 10")
 
@@ -24,9 +30,10 @@ class QuantumPoker:
         self.starting_chips = starting_chips
         self.small_blind = small_blind
         self.big_blind = big_blind
-        
+
         self.players: List[Player] = [
-            Player(f"Player {i+1}", i + 1, starting_chips=starting_chips) for i in range(num_players)
+            Player(f"Player {i+1}", i + 1, starting_chips=starting_chips)
+            for i in range(num_players)
         ]
 
         # Initialize quantum circuit manager
@@ -54,7 +61,7 @@ class QuantumPoker:
 
         # Deck index for dealing
         self.deck_index = 0
-        
+
         # Session tracking
         self.hand_number = 0
         self.session_active = False
@@ -162,7 +169,7 @@ class QuantumPoker:
 
         if source_card_idx not in [0, 1]:
             raise ValueError("Invalid hole card index")
-        
+
         if bit_index < 0 or bit_index > 2:
             raise ValueError(
                 f"Invalid bit index: {bit_index}. Only rank bits 0-2 allowed.\n"
@@ -189,68 +196,70 @@ class QuantumPoker:
     def betting_round(self, round_name: str = None):
         """
         Execute a betting round with quantum action support.
-        
+
         Args:
             round_name: Optional name of the round (pre-flop, flop, turn, river)
         """
         if round_name:
             print(f"\n=== {round_name.upper()} BETTING ROUND ===")
-        
+
         # Reset bets for new round
         for player in self.players:
             player.reset_for_new_round()
-        
+
         self.current_bet = 0
         last_aggressor_idx = -1  # Track who last raised
-        
+
         # Start betting after big blind (or dealer for post-flop)
         if round_name == "pre-flop":
             start_idx = (self.dealer_position + 3) % self.num_players
         else:
             start_idx = (self.dealer_position + 1) % self.num_players
-        
+
         self.current_player_idx = start_idx
         players_acted = 0
         players_to_act = sum(1 for p in self.players if not p.folded and not p.all_in)
-        
+
         # Continue until all players have acted and bets are matched
         while players_acted < len(self.players):
             player = self.players[self.current_player_idx]
-            
+
             # Skip if folded or all-in
             if player.folded or player.all_in:
-                self.current_player_idx = (self.current_player_idx + 1) % self.num_players
+                self.current_player_idx = (
+                    self.current_player_idx + 1
+                ) % self.num_players
                 players_acted += 1
                 continue
-            
+
             # Check if player needs to act
             amount_to_call = self.current_bet - player.current_bet
-            
+
             # If everyone has matched the bet and we've gone full circle, round is over
             if amount_to_call == 0 and players_acted >= players_to_act:
                 break
-            
+
             # Player's turn
             print(f"\n{player.name}'s turn:")
             print(f"  Chips: {player.chips} | Quantum Chips: {player.quantum_chips}")
             print(f"  Current bet: {player.current_bet} | To call: {amount_to_call}")
             print(f"  Pot: {self.pot}")
-            
+
             # In actual implementation, this would come from user input or AI
             # For now, we'll have a placeholder that can be overridden
             action = self._get_player_action(player, amount_to_call)
-            
+
             if action["type"] == "fold":
                 player.fold()
                 print(f"{player.name} folds")
                 players_to_act -= 1
-                
+
             elif action["type"] == "check":
                 if amount_to_call > 0:
                     print(f"Cannot check, must call {amount_to_call}")
                     continue
                 print(f"{player.name} checks")
-                
+
             elif action["type"] == "call":
                 actual_bet = player.call(amount_to_call)
                 self.pot += actual_bet
@@ -258,43 +267,43 @@ class QuantumPoker:
                 if player.all_in:
                     print(f"{player.name} is ALL-IN!")
                     players_to_act -= 1
-                    
+
             elif action["type"] == "raise":
                 raise_amount = action.get("amount", 0)
                 if raise_amount < self.current_bet * 2:
                     print(f"Minimum raise is {self.current_bet * 2}")
                     continue
-                
+
                 actual_bet = player.raise_bet(self.current_bet, raise_amount)
                 self.pot += actual_bet
                 self.current_bet = player.current_bet
                 last_aggressor_idx = self.current_player_idx
                 print(f"{player.name} raises to {self.current_bet}")
-                
+
                 if player.all_in:
                     print(f"{player.name} is ALL-IN!")
                     players_to_act -= 1
-                
+
                 # Reset action counter since everyone needs to respond to raise
                 players_acted = 0
-                
+
             elif action["type"] == "quantum":
                 # Quantum action during betting round
                 self._handle_quantum_action(player, action)
                 # Quantum action doesn't count as betting action, player still needs to bet
                 continue
-            
+
             self.current_player_idx = (self.current_player_idx + 1) % self.num_players
             players_acted += 1
-            
+
             # Check if only one player remains
             active_players = sum(1 for p in self.players if not p.folded)
             if active_players == 1:
                 print("\nAll other players folded!")
                 break
-        
+
         print(f"\nBetting round complete. Pot: {self.pot}")
-    
+
     def _get_player_action(self, player: Player, amount_to_call: int) -> Dict:
         """
         Get player action. Override this method for AI or network input.
@@ -307,7 +316,7 @@ class QuantumPoker:
             return {"type": "call"}
         else:
             return {"type": "fold"}
-    
+
     def _handle_quantum_action(self, player: Player, action: Dict):
         """
         Handle quantum action during betting round.
@@ -316,115 +325,117 @@ class QuantumPoker:
             source_idx = action.get("source_card_idx", 0)
             target_id = action.get("target_card_id", "")
             bit_index = action.get("bit_index", 0)
-            
+
             if not player.use_quantum_chip():
                 print(f"{player.name} has no quantum chips left!")
                 return
-            
+
             source_id = f"P{player.number}H{source_idx + 1}"
             self.qc_manager.entangle_cards(source_id, target_id, bit_index)
-            
+
             bit_effect = ["±1", "±2", "±4"][bit_index]
-            print(f"{player.name} used quantum action: entangled {source_id} with {target_id} (bit {bit_index}: {bit_effect})")
-            
+            print(
+                f"{player.name} used quantum action: entangled {source_id} with {target_id} (bit {bit_index}: {bit_effect})"
+            )
+
         except Exception as e:
             print(f"Quantum action failed: {e}")
             player.quantum_chips += 1  # Refund on error
-    
+
     def post_blinds(self, small_blind: int = 10, big_blind: int = 20):
         """
         Post small and big blinds.
-        
+
         Args:
             small_blind: Small blind amount
             big_blind: Big blind amount
         """
         small_blind_idx = (self.dealer_position + 1) % self.num_players
         big_blind_idx = (self.dealer_position + 2) % self.num_players
-        
+
         sb_player = self.players[small_blind_idx]
         bb_player = self.players[big_blind_idx]
-        
+
         # Post small blind
         sb_amount = sb_player.bet(small_blind)
         self.pot += sb_amount
         print(f"{sb_player.name} posts small blind: {sb_amount}")
-        
+
         # Post big blind
         bb_amount = bb_player.bet(big_blind)
         self.pot += bb_amount
         self.current_bet = bb_amount
         print(f"{bb_player.name} posts big blind: {bb_amount}")
-    
+
     def play_hand(self, small_blind: int = 10, big_blind: int = 20):
         """
         Play a complete hand with all betting rounds.
-        
+
         Args:
             small_blind: Small blind amount
             big_blind: Big blind amount
         """
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("NEW HAND")
-        print("="*50)
-        
+        print("=" * 50)
+
         # Reset players
         for player in self.players:
             player.reset_for_new_hand()
-        
+
         # Reset game state
         self.pot = 0
         self.current_bet = 0
         self.deck_index = 0
         self.shuffle_deck()
-        
+
         # Reset quantum circuit for new hand
         self.qc_manager = QuantumPokerCircuit()
-        
+
         # Reset community cards
         self.flop = [None, None, None]
         self.turn = None
         self.river = None
-        
+
         # Deal hole cards
         print("\nDealing hole cards...")
         self.deal_hole_cards()
-        
+
         # Post blinds
         self.post_blinds(small_blind, big_blind)
-        
+
         # Pre-flop betting
         self.current_round = "pre-flop"
         self.betting_round("pre-flop")
-        
+
         # Check if hand is over
         if sum(1 for p in self.players if not p.folded) == 1:
             return self._award_pot()
-        
+
         # Flop
         self.deal_flop()
         self.betting_round("flop")
-        
+
         if sum(1 for p in self.players if not p.folded) == 1:
             return self._award_pot()
-        
+
         # Turn
         self.deal_turn()
         self.betting_round("turn")
-        
+
         if sum(1 for p in self.players if not p.folded) == 1:
             return self._award_pot()
-        
+
         # River
         self.deal_river()
         self.betting_round("river")
-        
+
         if sum(1 for p in self.players if not p.folded) == 1:
             return self._award_pot()
-        
+
         # Showdown
         return self.showdown()
-    
+
     def _award_pot(self):
         """Award pot to remaining player (when all others fold)."""
         winner = next(p for p in self.players if not p.folded)
@@ -454,71 +465,91 @@ class QuantumPoker:
         winning_bitstring = most_common[0]
         total_shots = sum(results.values())
 
-        print(f"Most common outcome: {most_common[1]} shots ({100*most_common[1]/total_shots:.1f}%)\n")
+        print(
+            f"Most common outcome: {most_common[1]} shots ({100*most_common[1]/total_shots:.1f}%)\n"
+        )
 
         # Decode all cards
         decoded_cards = {}
         print("Final Card Values:")
         print("-" * 40)
-        
+
         has_invalid = False
         for card_id in self.qc_manager.registered_cards:
             rank, suit = self.qc_manager.decode_measurement(winning_bitstring, card_id)
-            
+
             # Handle invalid measurements as "quantum errors" - re-measure that specific card
             if rank is None or suit is None:
                 has_invalid = True
                 # For now, just mark as error - in production, could trigger re-measurement
                 rank, suit = "ERROR", "ERROR"
-            
+
             decoded_cards[card_id] = (rank, suit)
-            
+
             # Pretty print card type
             if card_id.startswith("P"):
                 player_num = card_id[1]
                 card_num = card_id[3]
-                card_display = f"{rank} of {suit}" if rank != "ERROR" else "⚠️ QUANTUM ERROR"
+                card_display = (
+                    f"{rank} of {suit}" if rank != "ERROR" else "⚠️ QUANTUM ERROR"
+                )
                 print(f"Player {player_num} - Hole Card {card_num}: {card_display}")
             elif card_id.startswith("F"):
                 flop_num = int(card_id[1]) + 1
-                card_display = f"{rank} of {suit}" if rank != "ERROR" else "⚠️ QUANTUM ERROR"
+                card_display = (
+                    f"{rank} of {suit}" if rank != "ERROR" else "⚠️ QUANTUM ERROR"
+                )
                 print(f"Flop Card {flop_num}: {card_display}")
             elif card_id == "T":
-                card_display = f"{rank} of {suit}" if rank != "ERROR" else "⚠️ QUANTUM ERROR"
+                card_display = (
+                    f"{rank} of {suit}" if rank != "ERROR" else "⚠️ QUANTUM ERROR"
+                )
                 print(f"Turn: {card_display}")
             elif card_id == "R":
-                card_display = f"{rank} of {suit}" if rank != "ERROR" else "⚠️ QUANTUM ERROR"
+                card_display = (
+                    f"{rank} of {suit}" if rank != "ERROR" else "⚠️ QUANTUM ERROR"
+                )
                 print(f"River: {card_display}")
 
         if has_invalid:
-            print("\n⚠️  Note: Quantum errors occurred due to entanglement creating invalid card states.")
-            print("   In a real game, these cards would be re-measured or the hand re-dealt.")
+            print(
+                "\n⚠️  Note: Quantum errors occurred due to entanglement creating invalid card states."
+            )
+            print(
+                "   In a real game, these cards would be re-measured or the hand re-dealt."
+            )
 
         # Evaluate hands and determine winner (if no quantum errors)
         winner_info = None
         if not has_invalid:
             winner_info = self._determine_winner(decoded_cards)
-            
+
             if winner_info:
                 print("\n" + "=" * 40)
                 print("HAND EVALUATION")
                 print("=" * 40)
-                
+
                 for player_num, hand_info in winner_info["all_hands"].items():
                     print(f"\nPlayer {player_num}: {hand_info['hand_name']}")
-                    print(f"  Best 5 cards: {', '.join([f'{c.rank} of {c.suit}' for c in hand_info['best_cards']])}")
-                
+                    print(
+                        f"  Best 5 cards: {', '.join([f'{c.rank} of {c.suit}' for c in hand_info['best_cards']])}"
+                    )
+
                 print("\n" + "=" * 40)
                 if len(winner_info["winners"]) == 1:
                     winner = winner_info["winners"][0]
-                    print(f"🏆 WINNER: Player {winner['player_num']} with {winner['hand_name']}!")
+                    print(
+                        f"🏆 WINNER: Player {winner['player_num']} with {winner['hand_name']}!"
+                    )
                     print(f"   Wins {self.pot} chips")
                 else:
-                    winner_nums = [w['player_num'] for w in winner_info["winners"]]
+                    winner_nums = [w["player_num"] for w in winner_info["winners"]]
                     print(f"🤝 TIE between Players {', '.join(map(str, winner_nums))}")
-                    print(f"   Split pot: {self.pot // len(winner_info['winners'])} chips each")
+                    print(
+                        f"   Split pot: {self.pot // len(winner_info['winners'])} chips each"
+                    )
                 print("=" * 40)
-                
+
                 # Award pot
                 self._award_pot_to_winners(winner_info["winners"])
 
@@ -532,11 +563,11 @@ class QuantumPoker:
             "has_errors": has_invalid,
             "winner_info": winner_info,
         }
-    
+
     def _determine_winner(self, decoded_cards: Dict) -> Optional[Dict]:
         """
         Determine winner(s) from decoded cards.
-        
+
         Returns:
             Dict with winner info or None if cards are invalid
         """
@@ -548,23 +579,23 @@ class QuantumPoker:
                     rank, suit = decoded_cards[f"F{i}"]
                     if rank != "ERROR":
                         community_cards.append(Card(suit, rank))
-            
+
             if "T" in decoded_cards:
                 rank, suit = decoded_cards["T"]
                 if rank != "ERROR":
                     community_cards.append(Card(suit, rank))
-            
+
             if "R" in decoded_cards:
                 rank, suit = decoded_cards["R"]
                 if rank != "ERROR":
                     community_cards.append(Card(suit, rank))
-            
+
             # Evaluate each player's hand
             player_hands = {}
             for player in self.players:
                 if player.folded:
                     continue
-                
+
                 # Reconstruct player cards
                 player_cards = []
                 for i in range(2):
@@ -573,7 +604,7 @@ class QuantumPoker:
                         rank, suit = decoded_cards[card_id]
                         if rank != "ERROR":
                             player_cards.append(Card(suit, rank))
-                
+
                 if len(player_cards) == 2 and len(community_cards) >= 3:
                     hand_name, kickers, best_cards = HandEvaluator.get_best_hand(
                         player_cards, community_cards
@@ -582,24 +613,23 @@ class QuantumPoker:
                         "hand_name": hand_name,
                         "kickers": kickers,
                         "best_cards": best_cards,
-                        "player": player
+                        "player": player,
                     }
-            
+
             if not player_hands:
                 return None
-            
+
             # Find winner(s)
             best_hand = None
             winners = []
-            
+
             for player_num, hand_info in player_hands.items():
                 if best_hand is None:
                     best_hand = (hand_info["hand_name"], hand_info["kickers"])
                     winners = [hand_info]
                 else:
                     comparison = HandEvaluator.compare_hands(
-                        (hand_info["hand_name"], hand_info["kickers"]),
-                        best_hand
+                        (hand_info["hand_name"], hand_info["kickers"]), best_hand
                     )
                     if comparison > 0:
                         # New winner
@@ -608,7 +638,7 @@ class QuantumPoker:
                     elif comparison == 0:
                         # Tie
                         winners.append(hand_info)
-            
+
             return {
                 "winners": [
                     {
@@ -616,34 +646,34 @@ class QuantumPoker:
                         "player_name": w["player"]["name"],
                         "hand_name": w["hand_name"],
                         "kickers": w["kickers"],
-                        "best_cards": w["best_cards"]
+                        "best_cards": w["best_cards"],
                     }
                     for w in winners
                 ],
-                "all_hands": player_hands
+                "all_hands": player_hands,
             }
-            
+
         except Exception as e:
             print(f"Error determining winner: {e}")
             return None
-    
+
     def _award_pot_to_winners(self, winners: List[Dict]):
         """Award pot to winner(s)."""
         if not winners:
             return
-        
+
         pot_share = self.pot // len(winners)
-        
+
         for winner in winners:
             player = next(p for p in self.players if p.number == winner["player_num"])
             player.chips += pot_share
-        
+
         self.pot = 0
 
     def get_game_state(self, viewing_player: Optional[int] = None) -> Dict:
         """
         Get current game state for API/frontend consumption.
-        
+
         Args:
             viewing_player: Player number (1-indexed). If provided, hide other players' hole cards.
 
@@ -656,15 +686,32 @@ class QuantumPoker:
             "current_bet": self.current_bet,
             "dealer_position": self.dealer_position,
             "current_player": self.current_player_idx,
-            "players": [p.to_dict(reveal_cards=(viewing_player is None or p.number == viewing_player)) for p in self.players],
+            "players": [
+                p.to_dict(
+                    reveal_cards=(viewing_player is None or p.number == viewing_player)
+                )
+                for p in self.players
+            ],
             "community_cards": {
-                "flop": [{"suit": c.suit, "rank": c.rank} for c in self.flop if c] if any(self.flop) else [],
-                "turn": {"suit": self.turn.suit, "rank": self.turn.rank} if self.turn else None,
-                "river": {"suit": self.river.suit, "rank": self.river.rank} if self.river else None,
+                "flop": (
+                    [{"suit": c.suit, "rank": c.rank} for c in self.flop if c]
+                    if any(self.flop)
+                    else []
+                ),
+                "turn": (
+                    {"suit": self.turn.suit, "rank": self.turn.rank}
+                    if self.turn
+                    else None
+                ),
+                "river": (
+                    {"suit": self.river.suit, "rank": self.river.rank}
+                    if self.river
+                    else None
+                ),
             },
             "entanglements": self.qc_manager.get_entanglement_graph(),
         }
-    
+
     def to_dict(self, viewing_player: Optional[int] = None) -> Dict:
         """Alias for get_game_state for consistency."""
         return self.get_game_state(viewing_player)
@@ -674,11 +721,11 @@ class QuantumPoker:
         Get visual representation of the quantum circuit.
         """
         return self.qc_manager.get_circuit_diagram()
-    
+
     # ============================================================================
     # Session Management
     # ============================================================================
-    
+
     def start_session(self):
         """Start a new game session."""
         self.session_active = True
@@ -687,108 +734,110 @@ class QuantumPoker:
         print(f"🎮 Game session started with {self.num_players} players")
         print(f"   Starting chips: {self.starting_chips}")
         print(f"   Blinds: {self.small_blind}/{self.big_blind}")
-    
+
     def play_next_hand(self) -> Optional[Dict]:
         """
         Play the next hand in the session.
-        
+
         Returns:
             Hand result dict, or None if session should end
         """
         if not self.session_active:
             raise ValueError("Session not started. Call start_session() first.")
-        
+
         # Check if we have enough players
         active_players = [p for p in self.players if p.chips > 0 and not p.folded]
         if len(active_players) < 2:
             print(f"\n🏁 Game over! Only {len(active_players)} player(s) remaining.")
             self.end_session()
             return None
-        
+
         self.hand_number += 1
         print(f"\n{'='*60}")
         print(f"HAND #{self.hand_number}")
         print(f"{'='*60}")
-        
+
         # Rotate dealer button
         if self.hand_number > 1:
             self._rotate_dealer()
-        
+
         # Show chip stacks
         print("\nChip Stacks:")
         for player in self.players:
             if player.chips > 0:
                 print(f"  {player.name}: {player.chips} chips")
-        
+
         # Play hand
         result = self.play_hand(self.small_blind, self.big_blind)
         self.hands_played += 1
-        
+
         return result
-    
+
     def _rotate_dealer(self):
         """Rotate dealer button to next active player."""
         initial_dealer = self.dealer_position
-        
+
         while True:
             self.dealer_position = (self.dealer_position + 1) % self.num_players
-            
+
             # Find player with chips
             dealer_player = self.players[self.dealer_position]
             if dealer_player.chips > 0:
                 break
-            
+
             # Prevent infinite loop
             if self.dealer_position == initial_dealer:
                 break
-        
+
         dealer_player = self.players[self.dealer_position]
         print(f"🔘 Dealer: {dealer_player.name}")
-    
+
     def end_session(self):
         """End the current session."""
         self.session_active = False
-        
+
         print(f"\n{'='*60}")
         print("GAME SESSION ENDED")
         print(f"{'='*60}")
         print(f"Hands played: {self.hands_played}")
-        
+
         # Sort players by chips
         sorted_players = sorted(self.players, key=lambda p: p.chips, reverse=True)
-        
+
         print("\nFinal Standings:")
         for i, player in enumerate(sorted_players, 1):
             profit = player.chips - self.starting_chips
             profit_str = f"+{profit}" if profit > 0 else str(profit)
             print(f"  {i}. {player.name}: {player.chips} chips ({profit_str})")
-        
+
         winner = sorted_players[0]
         print(f"\n🏆 Winner: {winner.name} with {winner.chips} chips!")
-    
+
     def get_session_stats(self) -> Dict:
         """Get session statistics."""
         active_players = sum(1 for p in self.players if p.chips > 0)
         eliminated_players = self.num_players - active_players
-        
+
         player_stats = []
         for player in self.players:
             profit = player.chips - self.starting_chips
-            player_stats.append({
-                "name": player.name,
-                "number": player.number,
-                "chips": player.chips,
-                "profit": profit,
-                "active": player.chips > 0
-            })
-        
+            player_stats.append(
+                {
+                    "name": player.name,
+                    "number": player.number,
+                    "chips": player.chips,
+                    "profit": profit,
+                    "active": player.chips > 0,
+                }
+            )
+
         return {
             "hand_number": self.hand_number,
             "hands_played": self.hands_played,
             "active_players": active_players,
             "eliminated_players": eliminated_players,
             "session_active": self.session_active,
-            "player_stats": player_stats
+            "player_stats": player_stats,
         }
 
 
