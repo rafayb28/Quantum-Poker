@@ -77,13 +77,76 @@
 }
 
 .waiting-area h3 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
+  font-size: 1.8rem;
+  margin-bottom: 30px;
+  color: #fff;
 }
 
-.waiting-area p {
-  opacity: 0.8;
+.game-id-box {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.share-label {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.game-id-display {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-id-display code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  color: #4fc3f7;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+  flex: 1;
+  max-width: 400px;
+}
+
+.copy-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.player-count {
+  font-size: 1.2rem;
+  color: #fff;
   margin-bottom: 20px;
+  opacity: 0.9;
+}
+
+.waiting-message {
+  font-size: 1rem;
+  color: #ffeb3b;
+  margin-top: 20px;
+  font-style: italic;
 }
 
 .start-btn {
@@ -94,11 +157,19 @@
   color: #fff;
   font-size: 1.1rem;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .start-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.start-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Community cards */

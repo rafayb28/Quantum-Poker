@@ -116,17 +116,33 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
         {/* Waiting for game to start */}
         {gameState.round === 'waiting' && (
           <div className="waiting-area">
-            <h3>Waiting for players...</h3>
-            <p>{gameState.players.length} / {gameState.num_players} players joined</p>
+            <h3>Waiting Room</h3>
+            <div className="game-id-box">
+              <p className="share-label">Share this Game ID with other players:</p>
+              <div className="game-id-display">
+                <code>{gameId}</code>
+                <button 
+                  className="copy-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(gameId)
+                    alert('Game ID copied to clipboard!')
+                  }}
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+            <p className="player-count">{gameState.players.length} / {gameState.num_players} players joined</p>
             {canStart && (
               <button 
                 className="start-btn"
                 onClick={handleStartGame}
                 disabled={actionInProgress || gameState.players.length < 2}
               >
-                Start Game
+                {gameState.players.length < 2 ? 'Waiting for more players...' : 'Start Game'}
               </button>
             )}
+            {!canStart && <p className="waiting-message">Waiting for host to start the game...</p>}
           </div>
         )}
 
@@ -138,11 +154,13 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
               <h3>Community Cards</h3>
               <div className="cards">
                 {gameState.community_cards && Object.keys(gameState.community_cards).length > 0 ? (
-                  Object.entries(gameState.community_cards).map(([id, card]) => (
-                    <div key={id} className="card">
-                      {card ? `${card.rank} ${card.suit}` : '???'}
-                    </div>
-                  ))
+                  Object.entries(gameState.community_cards)
+                    .filter(([id, card]) => card !== null && card !== undefined)
+                    .map(([id, card]) => (
+                      <div key={id} className="card">
+                        {`${card.rank} ${card.suit}`}
+                      </div>
+                    ))
                 ) : (
                   <p className="no-cards">No community cards yet</p>
                 )}
