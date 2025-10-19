@@ -30,7 +30,7 @@ test.describe('Two-Player Game Flow', () => {
         console.log('Game ID:', gameId);
         
         // Verify waiting room shows 1 player
-        await expect(player1Page.locator('text=1 of 2 players joined')).toBeVisible();
+        await expect(player1Page.locator('text=Players (1 of')).toBeVisible();
         await expect(player1Page.locator('text=Alice')).toBeVisible();
         await expect(player1Page.locator('.host-badge')).toBeVisible();
       });
@@ -51,7 +51,7 @@ test.describe('Two-Player Game Flow', () => {
         await expect(player2Page.locator('text=Waiting Room')).toBeVisible({ timeout: 5000 });
         
         // Verify Player 2 sees both players
-        await expect(player2Page.locator('text=2 of 2 players joined')).toBeVisible();
+        await expect(player2Page.locator('text=Players (2 of')).toBeVisible();
         await expect(player2Page.locator('text=Bob')).toBeVisible();
         
         // Player 2 should NOT see the copy button (not host)
@@ -64,7 +64,7 @@ test.describe('Two-Player Game Flow', () => {
         await player1Page.waitForTimeout(2500);
         
         // Verify Player 1 sees both players
-        await expect(player1Page.locator('text=2 of 2 players joined')).toBeVisible();
+        await expect(player1Page.locator('text=Players (2 of')).toBeVisible();
         await expect(player1Page.locator('text=Bob')).toBeVisible();
       });
 
@@ -154,7 +154,7 @@ test.describe('Two-Player Game Flow', () => {
       await player2Page.fill('input[placeholder*="Game ID"]', gameId);
       await player2Page.click('button:has-text("Join Game")');
       
-      await expect(player2Page.locator('text=2 of 2 players joined')).toBeVisible({ timeout: 5000 });
+      await expect(player2Page.locator('text=Players (2 of')).toBeVisible({ timeout: 5000 });
 
       // Player 2 leaves
       await player2Page.click('button:has-text("Leave Game")');
@@ -162,7 +162,7 @@ test.describe('Two-Player Game Flow', () => {
 
       // Player 1 should see player left
       await player1Page.waitForTimeout(2500); // Wait for polling
-      await expect(player1Page.locator('text=1 of 2 players joined')).toBeVisible();
+      await expect(player1Page.locator('text=Players (1 of')).toBeVisible();
 
     } finally {
       await player1Context.close();
