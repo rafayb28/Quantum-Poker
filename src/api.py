@@ -175,15 +175,6 @@ async def start_game(game_id: str):
         "message": "Game started",
         "state": game.to_dict()
     }
-        raise HTTPException(status_code=404, detail="Game not found")
-
-    game = games[game_id]
-
-    # TODO: Start game logic
-    # game.deal_hole_cards()
-    # await broadcast_game_state(game_id)
-
-    return {"message": "Game started"}
 
 
 @app.get("/game/{game_id}/state")
@@ -307,12 +298,6 @@ async def perform_quantum_action(game_id: str, player_number: int, request: Quan
             
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-    # TODO: Implement quantum action
-    # game.entangle_cards(player, request.source_card_idx, request.target_card_id, request.bit_index)
-    # await broadcast_game_state(game_id)
-
-    return {"message": f"Quantum action {request.action} performed"}
 
 
 @app.get("/game/{game_id}/circuit")
@@ -447,19 +432,6 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         if game_id in websocket_connections:
             websocket_connections[game_id].remove(websocket)
         print(f"Client disconnected from game {game_id}")
-
-
-async def broadcast_game_state(game_id: str):
-    """
-    Broadcast game state to all connected clients.
-    """
-    if game_id not in websocket_connections:
-        return
-
-    game = games.get(game_id)
-    if not game:
-        return
-
 
 
 # ============================================================================
