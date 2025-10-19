@@ -46,7 +46,15 @@ function App() {
     setScreen('game')
   }
 
-  const handleLeaveGame = () => {
+  const handleLeaveGame = async () => {
+    if (gameId) {
+      try {
+        const { game } = await import('./api')
+        await game.leave(gameId)
+      } catch (err) {
+        console.error('Failed to leave game:', err)
+      }
+    }
     setGameId(null)
     setPlayerNumber(null)
     setScreen('lobby')

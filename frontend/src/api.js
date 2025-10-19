@@ -33,6 +33,9 @@ export const game = {
   join: (gameId) => 
     api.post(`/game/${gameId}/join`),
   
+  leave: (gameId) =>
+    api.post(`/game/${gameId}/leave`),
+  
   start: (gameId) => 
     api.post(`/game/${gameId}/start`),
   

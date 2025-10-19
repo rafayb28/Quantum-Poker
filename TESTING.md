@@ -5,6 +5,14 @@
 - [ ] Frontend running on port 3000
 - [ ] No console errors in browser
 
+### Multi-Player Testing (IMPORTANT!)
+Due to localStorage token persistence, you MUST use separate browser contexts:
+- **Option 1:** Incognito/Private window for Player 1 + Regular browser for Player 2
+- **Option 2:** Two completely different browsers (e.g., Chrome + Firefox)
+- **Option 3:** After each player logs in, use the "Logout" button to clear session before testing another player in the same browser
+
+⚠️ Opening multiple tabs in the same browser will share the same session/token!
+
 ## Authentication
 - [ ] Can enter username and create session
 - [ ] Token saved in localStorage

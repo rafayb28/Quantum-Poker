@@ -259,6 +259,14 @@ async def join_game(
     # Update game instance
     game = active_games[game_id]
     session = session_manager.get_session(token)
+    
+    # Verify player slot exists (shouldn't exceed num_players)
+    if player_number > game.num_players:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Game is full ({game.num_players} players max)"
+        )
+    
     game_players[game_id][player_number] = session.username
     game.players[player_number - 1].name = session.username
 
@@ -267,6 +275,33 @@ async def join_game(
         player_number=player_number,
         message=f"{session.username} joined game"
     )
+
+
+@app.post("/game/{game_id}/leave")
+async def leave_game(
+    game_id: str,
+    token: str = Depends(verify_game_access)
+):
+    """
+    Leave a game (removes player from game session).
+    """
+    if game_id not in active_games:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    session = session_manager.get_session(token)
+    player_number = session.player_number
+    
+    # Remove from game_players
+    if game_id in game_players and player_number in game_players[game_id]:
+        del game_players[game_id][player_number]
+    
+    # Clear player's game session
+    session.game_id = None
+    session.player_number = None
+    
+    return {
+        "message": "Left game successfully"
+    }
 
 
 @app.post("/game/{game_id}/start")
