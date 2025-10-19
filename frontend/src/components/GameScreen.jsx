@@ -178,14 +178,18 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
             <div className="hand-area">
               <h3>Your Hand</h3>
               <div className="cards">
-                {currentPlayer?.hand_identifiers?.map((cardId, idx) => {
-                  const card = gameState.player_hands?.[playerNumber]?.[idx]
-                  return (
-                    <div key={cardId} className="card">
-                      {card ? `${card.rank} ${card.suit}` : '???'}
-                    </div>
-                  )
-                })}
+                {currentPlayer?.hand_identifiers && gameState.player_hands ? (
+                  currentPlayer.hand_identifiers.map((cardId, idx) => {
+                    const card = gameState.player_hands[playerNumber]?.[idx]
+                    return (
+                      <div key={cardId} className="card">
+                        {card ? `${card.rank} ${card.suit}` : '???'}
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="card-placeholder">Waiting for game to start...</div>
+                )}
               </div>
             </div>
 
