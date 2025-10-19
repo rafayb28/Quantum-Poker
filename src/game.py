@@ -176,13 +176,244 @@ class QuantumPoker:
             f"(bit {bit_index}: {bit_effect} rank change)"
         )
 
-    def betting_round(self):
+    def betting_round(self, round_name: str = None):
         """
-        Placeholder for betting round logic.
-        TODO: Implement full betting logic with fold/check/call/raise.
+        Execute a betting round with quantum action support.
+        
+        Args:
+            round_name: Optional name of the round (pre-flop, flop, turn, river)
         """
-        # This will be implemented in Phase 2
-        pass
+        if round_name:
+            print(f"\n=== {round_name.upper()} BETTING ROUND ===")
+        
+        # Reset bets for new round
+        for player in self.players:
+            player.reset_for_new_round()
+        
+        self.current_bet = 0
+        last_aggressor_idx = -1  # Track who last raised
+        
+        # Start betting after big blind (or dealer for post-flop)
+        if round_name == "pre-flop":
+            start_idx = (self.dealer_position + 3) % self.num_players
+        else:
+            start_idx = (self.dealer_position + 1) % self.num_players
+        
+        self.current_player_idx = start_idx
+        players_acted = 0
+        players_to_act = sum(1 for p in self.players if not p.folded and not p.all_in)
+        
+        # Continue until all players have acted and bets are matched
+        while players_acted < len(self.players):
+            player = self.players[self.current_player_idx]
+            
+            # Skip if folded or all-in
+            if player.folded or player.all_in:
+                self.current_player_idx = (self.current_player_idx + 1) % self.num_players
+                players_acted += 1
+                continue
+            
+            # Check if player needs to act
+            amount_to_call = self.current_bet - player.current_bet
+            
+            # If everyone has matched the bet and we've gone full circle, round is over
+            if amount_to_call == 0 and players_acted >= players_to_act:
+                break
+            
+            # Player's turn
+            print(f"\n{player.name}'s turn:")
+            print(f"  Chips: {player.chips} | Quantum Chips: {player.quantum_chips}")
+            print(f"  Current bet: {player.current_bet} | To call: {amount_to_call}")
+            print(f"  Pot: {self.pot}")
+            
+            # In actual implementation, this would come from user input or AI
+            # For now, we'll have a placeholder that can be overridden
+            action = self._get_player_action(player, amount_to_call)
+            
+            if action["type"] == "fold":
+                player.fold()
+                print(f"{player.name} folds")
+                players_to_act -= 1
+                
+            elif action["type"] == "check":
+                if amount_to_call > 0:
+                    print(f"Cannot check, must call {amount_to_call}")
+                    continue
+                print(f"{player.name} checks")
+                
+            elif action["type"] == "call":
+                actual_bet = player.call(amount_to_call)
+                self.pot += actual_bet
+                print(f"{player.name} calls {actual_bet}")
+                if player.all_in:
+                    print(f"{player.name} is ALL-IN!")
+                    players_to_act -= 1
+                    
+            elif action["type"] == "raise":
+                raise_amount = action.get("amount", 0)
+                if raise_amount < self.current_bet * 2:
+                    print(f"Minimum raise is {self.current_bet * 2}")
+                    continue
+                
+                actual_bet = player.raise_bet(self.current_bet, raise_amount)
+                self.pot += actual_bet
+                self.current_bet = player.current_bet
+                last_aggressor_idx = self.current_player_idx
+                print(f"{player.name} raises to {self.current_bet}")
+                
+                if player.all_in:
+                    print(f"{player.name} is ALL-IN!")
+                    players_to_act -= 1
+                
+                # Reset action counter since everyone needs to respond to raise
+                players_acted = 0
+                
+            elif action["type"] == "quantum":
+                # Quantum action during betting round
+                self._handle_quantum_action(player, action)
+                # Quantum action doesn't count as betting action, player still needs to bet
+                continue
+            
+            self.current_player_idx = (self.current_player_idx + 1) % self.num_players
+            players_acted += 1
+            
+            # Check if only one player remains
+            active_players = sum(1 for p in self.players if not p.folded)
+            if active_players == 1:
+                print("\nAll other players folded!")
+                break
+        
+        print(f"\nBetting round complete. Pot: {self.pot}")
+    
+    def _get_player_action(self, player: Player, amount_to_call: int) -> Dict:
+        """
+        Get player action. Override this method for AI or network input.
+        Default: simple logic for demonstration.
+        """
+        # Placeholder logic - in real game, this comes from UI/API
+        if amount_to_call == 0:
+            return {"type": "check"}
+        elif amount_to_call < player.chips * 0.3:
+            return {"type": "call"}
+        else:
+            return {"type": "fold"}
+    
+    def _handle_quantum_action(self, player: Player, action: Dict):
+        """
+        Handle quantum action during betting round.
+        """
+        try:
+            source_idx = action.get("source_card_idx", 0)
+            target_id = action.get("target_card_id", "")
+            bit_index = action.get("bit_index", 0)
+            
+            if not player.use_quantum_chip():
+                print(f"{player.name} has no quantum chips left!")
+                return
+            
+            source_id = f"P{player.number}H{source_idx + 1}"
+            self.qc_manager.entangle_cards(source_id, target_id, bit_index)
+            
+            bit_effect = ["±1", "±2", "±4"][bit_index]
+            print(f"{player.name} used quantum action: entangled {source_id} with {target_id} (bit {bit_index}: {bit_effect})")
+            
+        except Exception as e:
+            print(f"Quantum action failed: {e}")
+            player.quantum_chips += 1  # Refund on error
+    
+    def post_blinds(self, small_blind: int = 10, big_blind: int = 20):
+        """
+        Post small and big blinds.
+        
+        Args:
+            small_blind: Small blind amount
+            big_blind: Big blind amount
+        """
+        small_blind_idx = (self.dealer_position + 1) % self.num_players
+        big_blind_idx = (self.dealer_position + 2) % self.num_players
+        
+        sb_player = self.players[small_blind_idx]
+        bb_player = self.players[big_blind_idx]
+        
+        # Post small blind
+        sb_amount = sb_player.bet(small_blind)
+        self.pot += sb_amount
+        print(f"{sb_player.name} posts small blind: {sb_amount}")
+        
+        # Post big blind
+        bb_amount = bb_player.bet(big_blind)
+        self.pot += bb_amount
+        self.current_bet = bb_amount
+        print(f"{bb_player.name} posts big blind: {bb_amount}")
+    
+    def play_hand(self, small_blind: int = 10, big_blind: int = 20):
+        """
+        Play a complete hand with all betting rounds.
+        
+        Args:
+            small_blind: Small blind amount
+            big_blind: Big blind amount
+        """
+        print("\n" + "="*50)
+        print("NEW HAND")
+        print("="*50)
+        
+        # Reset players
+        for player in self.players:
+            player.reset_for_new_hand()
+        
+        # Reset game state
+        self.pot = 0
+        self.current_bet = 0
+        self.deck_index = 0
+        self.shuffle_deck()
+        
+        # Deal hole cards
+        print("\nDealing hole cards...")
+        self.deal_hole_cards()
+        
+        # Post blinds
+        self.post_blinds(small_blind, big_blind)
+        
+        # Pre-flop betting
+        self.current_round = "pre-flop"
+        self.betting_round("pre-flop")
+        
+        # Check if hand is over
+        if sum(1 for p in self.players if not p.folded) == 1:
+            return self._award_pot()
+        
+        # Flop
+        self.deal_flop()
+        self.betting_round("flop")
+        
+        if sum(1 for p in self.players if not p.folded) == 1:
+            return self._award_pot()
+        
+        # Turn
+        self.deal_turn()
+        self.betting_round("turn")
+        
+        if sum(1 for p in self.players if not p.folded) == 1:
+            return self._award_pot()
+        
+        # River
+        self.deal_river()
+        self.betting_round("river")
+        
+        if sum(1 for p in self.players if not p.folded) == 1:
+            return self._award_pot()
+        
+        # Showdown
+        return self.showdown()
+    
+    def _award_pot(self):
+        """Award pot to remaining player (when all others fold)."""
+        winner = next(p for p in self.players if not p.folded)
+        winner.chips += self.pot
+        print(f"\n{winner.name} wins {self.pot} chips!")
+        self.pot = 0
+        return {"winner": winner.name, "amount": self.pot}
 
     def showdown(self) -> Dict:
         """
@@ -255,9 +486,12 @@ class QuantumPoker:
             "has_errors": has_invalid,
         }
 
-    def get_game_state(self) -> Dict:
+    def get_game_state(self, viewing_player: Optional[int] = None) -> Dict:
         """
         Get current game state for API/frontend consumption.
+        
+        Args:
+            viewing_player: Player number (1-indexed). If provided, hide other players' hole cards.
 
         Returns:
             Dictionary representing current game state
@@ -266,30 +500,20 @@ class QuantumPoker:
             "round": self.current_round,
             "pot": self.pot,
             "current_bet": self.current_bet,
-            "players": [
-                {
-                    "name": p.name,
-                    "number": p.number,
-                    "chips": p.chips,
-                    "quantum_chips": p.quantum_chips,
-                    "current_bet": p.current_bet,
-                    "folded": p.folded,
-                    "hand_identifiers": [
-                        f"P{p.number}H1",
-                        f"P{p.number}H2",
-                    ]
-                    if p.hand
-                    else [],
-                }
-                for p in self.players
-            ],
+            "dealer_position": self.dealer_position,
+            "current_player": self.current_player_idx,
+            "players": [p.to_dict(reveal_cards=(viewing_player is None or p.number == viewing_player)) for p in self.players],
             "community_cards": {
-                "flop": ["F0", "F1", "F2"] if self.flop[0] else [],
-                "turn": "T" if self.turn else None,
-                "river": "R" if self.river else None,
+                "flop": [{"suit": c.suit, "rank": c.rank} for c in self.flop if c] if any(self.flop) else [],
+                "turn": {"suit": self.turn.suit, "rank": self.turn.rank} if self.turn else None,
+                "river": {"suit": self.river.suit, "rank": self.river.rank} if self.river else None,
             },
             "entanglements": self.qc_manager.get_entanglement_graph(),
         }
+    
+    def to_dict(self, viewing_player: Optional[int] = None) -> Dict:
+        """Alias for get_game_state for consistency."""
+        return self.get_game_state(viewing_player)
 
     def get_circuit_diagram(self) -> str:
         """
