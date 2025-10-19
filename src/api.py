@@ -4,14 +4,16 @@ FastAPI Backend for Quantum Poker
 To run: uvicorn src.api:app --reload
 """
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any, Tuple
 from enum import Enum
 import uuid
 
 from .game import QuantumPoker
+from .session_manager import get_session_manager, SessionManager
 
 app = FastAPI(title="Quantum Poker API", version="0.1.0")
 
@@ -27,6 +29,47 @@ app.add_middleware(
 # In-memory game storage (use Redis/DB in production)
 active_games: Dict[str, QuantumPoker] = {}
 game_players: Dict[str, Dict[int, str]] = {}  # game_id -> {player_number: player_name}
+
+# Session manager
+session_manager = get_session_manager()
+
+# Security
+security = HTTPBearer()
+
+# ============================================================================
+# Authentication Dependencies
+# ============================================================================
+
+
+async def verify_token(authorization: Optional[str] = Header(None)) -> str:
+    """
+    Verify session token from Authorization header.
+    
+    Expected format: "Bearer <token>"
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization format")
+    
+    token = authorization.replace("Bearer ", "")
+    
+    if not session_manager.validate_token(token):
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+    return token
+
+
+async def verify_game_access(game_id: str, token: str = Depends(verify_token)) -> str:
+    """
+    Verify that the authenticated player has access to the specified game.
+    """
+    if not session_manager.verify_game_access(game_id, token):
+        raise HTTPException(status_code=403, detail="Access denied to this game")
+    
+    return token
+
 
 # ============================================================================
 # Data Models (Pydantic schemas for API)
@@ -46,13 +89,31 @@ class QuantumActionType(str, Enum):
     # Future: SUPERPOSITION, TELEPORT, etc.
 
 
+class CreateSessionRequest(BaseModel):
+    username: str
+
+
+class CreateSessionResponse(BaseModel):
+    token: str
+    username: str
+    message: str
+
+
 class CreateGameRequest(BaseModel):
-    player_name: str
     num_players: int = 2
+    max_players: int = 6
 
 
-class JoinGameRequest(BaseModel):
-    player_name: str
+class CreateGameResponse(BaseModel):
+    game_id: str
+    player_number: int
+    message: str
+
+
+class JoinGameResponse(BaseModel):
+    game_id: str
+    player_number: int
+    message: str
 
 
 class PlayerActionRequest(BaseModel):
@@ -83,8 +144,8 @@ class GameState(BaseModel):
     pot: int
     current_bet: int
     players: List[PlayerState]
-    community_cards: Dict[str, any]
-    entanglements: Dict[str, List[tuple]]
+    community_cards: Dict[str, Any]
+    entanglements: Dict[str, List[Tuple]]
     current_player: Optional[int]
 
 
@@ -103,63 +164,129 @@ websocket_connections: Dict[str, List[WebSocket]] = {}  # game_id -> [websockets
 
 @app.get("/")
 async def root():
-    return {"message": "Quantum Poker API", "version": "0.1.0", "status": "operational"}
+    return {
+        "message": "Quantum Poker API",
+        "version": "0.2.0",
+        "status": "operational",
+        "auth": "token-based"
+    }
 
 
-@app.post("/game/create", response_model=Dict[str, str])
-async def create_game(request: CreateGameRequest):
+@app.post("/auth/session", response_model=CreateSessionResponse)
+async def create_session(request: CreateSessionRequest):
+    """
+    Create a new temporary session for a player.
+    No registration required - just pick a username.
+    """
+    token = session_manager.create_session(request.username)
+    
+    return CreateSessionResponse(
+        token=token,
+        username=request.username,
+        message=f"Session created for {request.username}"
+    )
+
+
+@app.get("/auth/validate")
+async def validate_session(token: str = Depends(verify_token)):
+    """
+    Validate if a token is still valid.
+    """
+    session = session_manager.get_session(token)
+    return {
+        "valid": True,
+        "username": session.username,
+        "game_id": session.game_id,
+        "player_number": session.player_number
+    }
+
+
+@app.post("/game/create", response_model=CreateGameResponse)
+async def create_game(
+    request: CreateGameRequest,
+    token: str = Depends(verify_token)
+):
     """
     Create a new quantum poker game.
+    Requires authentication token.
     """
     game_id = str(uuid.uuid4())
+    
+    # Create game session
+    if not session_manager.create_game_session(
+        game_id, 
+        token, 
+        max_players=request.max_players
+    ):
+        raise HTTPException(status_code=400, detail="Failed to create game session")
     
     # Initialize QuantumPoker instance
     game = QuantumPoker(num_players=request.num_players)
     active_games[game_id] = game
-    game_players[game_id] = {1: request.player_name}
     
-    # Set player name
-    game.players[0].name = request.player_name
+    # Get creator info
+    session = session_manager.get_session(token)
+    game_players[game_id] = {1: session.username}
+    game.players[0].name = session.username
 
-    return {
-        "game_id": game_id,
-        "player_number": "1",
-        "message": "Game created successfully"
-    }
+    return CreateGameResponse(
+        game_id=game_id,
+        player_number=1,
+        message="Game created successfully"
+    )
 
 
-@app.post("/game/{game_id}/join")
-async def join_game(game_id: str, request: JoinGameRequest):
+@app.post("/game/{game_id}/join", response_model=JoinGameResponse)
+async def join_game(
+    game_id: str,
+    token: str = Depends(verify_token)
+):
     """
     Join an existing game.
+    Requires authentication token.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
 
+    # Join game session
+    player_number = session_manager.join_game(game_id, token)
+    if player_number is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot join game (full or already started)"
+        )
+    
+    # Update game instance
     game = active_games[game_id]
-    players_in_game = len(game_players[game_id])
-    
-    if players_in_game >= game.num_players:
-        raise HTTPException(status_code=400, detail="Game is full")
-    
-    # Assign next player number
-    player_number = players_in_game + 1
-    game_players[game_id][player_number] = request.player_name
-    game.players[player_number - 1].name = request.player_name
+    session = session_manager.get_session(token)
+    game_players[game_id][player_number] = session.username
+    game.players[player_number - 1].name = session.username
 
-    return {
-        "message": f"{request.player_name} joined game {game_id}",
-        "player_number": player_number
-    }
+    return JoinGameResponse(
+        game_id=game_id,
+        player_number=player_number,
+        message=f"{session.username} joined game"
+    )
 
 
 @app.post("/game/{game_id}/start")
-async def start_game(game_id: str):
+async def start_game(
+    game_id: str,
+    token: str = Depends(verify_game_access)
+):
     """
     Start the game (deal initial cards, post blinds).
+    Only the game creator can start the game.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
+    
+    # Verify creator
+    if not session_manager.start_game(game_id, token):
+        raise HTTPException(
+            status_code=403,
+            detail="Only game creator can start the game"
+        )
     
     game = active_games[game_id]
     
@@ -178,26 +305,39 @@ async def start_game(game_id: str):
 
 
 @app.get("/game/{game_id}/state")
-async def get_game_state(game_id: str, player_number: Optional[int] = None):
+async def get_game_state(
+    game_id: str,
+    token: str = Depends(verify_game_access)
+):
     """
     Get current state of the game.
+    Only players in the game can view the state.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
 
     game = active_games[game_id]
-    return game.to_dict(viewing_player=player_number)
+    session = session_manager.get_session(token)
+    
+    return game.to_dict(viewing_player=session.player_number)
 
 
 @app.post("/game/{game_id}/action")
-async def perform_action(game_id: str, player_number: int, request: PlayerActionRequest):
+async def perform_action(
+    game_id: str,
+    request: PlayerActionRequest,
+    token: str = Depends(verify_game_access)
+):
     """
     Perform a standard poker action (fold, check, call, raise).
+    Token authentication determines which player is acting.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
 
     game = active_games[game_id]
+    session = session_manager.get_session(token)
+    player_number = session.player_number
     
     if player_number < 1 or player_number > game.num_players:
         raise HTTPException(status_code=400, detail="Invalid player number")
@@ -255,14 +395,21 @@ async def perform_action(game_id: str, player_number: int, request: PlayerAction
 
 
 @app.post("/game/{game_id}/quantum-action")
-async def perform_quantum_action(game_id: str, player_number: int, request: QuantumActionRequest):
+async def perform_quantum_action(
+    game_id: str,
+    request: QuantumActionRequest,
+    token: str = Depends(verify_game_access)
+):
     """
     Perform a quantum action (entanglement, etc.).
+    Token authentication determines which player is acting.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
 
     game = active_games[game_id]
+    session = session_manager.get_session(token)
+    player_number = session.player_number
     
     if player_number < 1 or player_number > game.num_players:
         raise HTTPException(status_code=400, detail="Invalid player number")
@@ -301,9 +448,13 @@ async def perform_quantum_action(game_id: str, player_number: int, request: Quan
 
 
 @app.get("/game/{game_id}/circuit")
-async def get_circuit_diagram(game_id: str):
+async def get_circuit_diagram(
+    game_id: str,
+    token: str = Depends(verify_game_access)
+):
     """
     Get the quantum circuit diagram as text.
+    Only players in the game can view the circuit.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -315,9 +466,13 @@ async def get_circuit_diagram(game_id: str):
 
 
 @app.post("/game/{game_id}/showdown")
-async def trigger_showdown(game_id: str):
+async def trigger_showdown(
+    game_id: str,
+    token: str = Depends(verify_game_access)
+):
     """
     Trigger showdown (measure all cards).
+    Any player in the game can trigger showdown.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -337,9 +492,13 @@ async def trigger_showdown(game_id: str):
 
 
 @app.post("/game/{game_id}/next-round")
-async def advance_round(game_id: str):
+async def advance_round(
+    game_id: str,
+    token: str = Depends(verify_game_access)
+):
     """
     Advance to the next round (flop, turn, river).
+    Any player in the game can advance rounds.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -444,8 +603,41 @@ async def health_check():
     return {
         "status": "healthy",
         "games_active": len(active_games),
-        "connections": sum(len(conns) for conns in websocket_connections.values())
+        "connections": sum(len(conns) for conns in websocket_connections.values()),
+        "active_sessions": session_manager.get_active_sessions_count(),
+        "active_game_sessions": session_manager.get_active_games_count()
     }
+
+
+@app.get("/stats")
+async def get_stats(token: str = Depends(verify_token)):
+    """Get server statistics (requires auth)."""
+    return {
+        "active_sessions": session_manager.get_active_sessions_count(),
+        "active_games": session_manager.get_active_games_count(),
+        "games": [{
+            "game_id": game_id,
+            "players": len(game_session.player_tokens),
+            "max_players": game_session.max_players,
+            "started": game_session.started
+        } for game_id, game_session in session_manager.game_sessions.items()]
+    }
+
+
+@app.get("/games/list")
+async def list_games(token: str = Depends(verify_token)):
+    """List all available games (requires auth)."""
+    games_list = []
+    for game_id, game_session in session_manager.game_sessions.items():
+        if game_id in active_games:
+            games_list.append({
+                "game_id": game_id,
+                "players": len(game_session.player_tokens),
+                "max_players": game_session.max_players,
+                "started": game_session.started,
+                "can_join": game_session.can_join(token)
+            })
+    return {"games": games_list}
 
 
 if __name__ == "__main__":
