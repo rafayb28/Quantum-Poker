@@ -1,31 +1,10 @@
-import qiskit
-import random
+"""
+Quantum Poker - Main Entry Point
 
-from card import Card, SUITS, RANKS
-from player import Player
+Run this file to start a demo game with quantum entanglement.
+"""
 
-
-class Poker:
-    def __init__(self, num_players: int):
-        QC = qiskit.QuantumCircuit()
-        self.cards = [Card(suit, rank) for suit in SUITS for rank in RANKS]
-        self.players = [Player(f"Player {i+1}", i + 1) for i in range(num_players)]
-        self.dealt = 0
-        self.shuffle()
-
-        for card in self.cards:  # add to circuit
-            QC.add_register(card.register)
-            card.prepare(QC)
-            print(card.__repr__())
-
-    def shuffle(self):
-        random.shuffle(self.cards)
-
-    def deal_hand(self):
-        for player in self.players:
-            player.hand = [self.cards[self.dealt], self.cards[self.dealt + 1]]
-            self.dealt += 2
-
+from src.game import example_game
 
 if __name__ == "__main__":
-    poker_game = Poker(num_players=2)
+    example_game()
