@@ -146,6 +146,58 @@
   transform: none;
 }
 
+.waiting-players {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 500px;
+}
+
+.waiting-players h4 {
+  color: #fff;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  text-align: left;
+}
+
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.waiting-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 12px 15px;
+  border-radius: 8px;
+  color: #fff;
+}
+
+.player-icon {
+  font-size: 1.3rem;
+}
+
+.player-name {
+  flex: 1;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.host-badge {
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  color: #333;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .player-count {
   font-size: 1.2rem;
   color: #fff;

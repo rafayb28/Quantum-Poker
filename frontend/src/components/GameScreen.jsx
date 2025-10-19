@@ -117,25 +117,41 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
         {gameState.round === 'waiting' && (
           <div className="waiting-area">
             <h3>Waiting Room</h3>
-            <div className="game-id-box">
-              <p className="share-label">Share this Game ID with other players:</p>
-              <div className="game-id-display">
-                <code>{gameId}</code>
-                <button 
-                  className={`copy-btn ${copied ? 'copied' : ''}`}
-                  onClick={() => {
-                    navigator.clipboard.writeText(gameId)
-                    setCopied(true)
-                    setTimeout(() => setCopied(false), 2000)
-                  }}
-                >
-                  {copied ? 'Copied!' : 'Copy'}
-                </button>
+            
+            {/* Only show Game ID box to host */}
+            {playerNumber === 1 && (
+              <div className="game-id-box">
+                <p className="share-label">Share this Game ID with other players:</p>
+                <div className="game-id-display">
+                  <code>{gameId}</code>
+                  <button 
+                    className={`copy-btn ${copied ? 'copied' : ''}`}
+                    onClick={() => {
+                      navigator.clipboard.writeText(gameId)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    }}
+                  >
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Players List */}
+            <div className="waiting-players">
+              <h4>Players ({gameState.players_joined || 1} of {gameState.num_players})</h4>
+              <div className="player-list">
+                {gameState.joined_player_names?.map((name, idx) => (
+                  <div key={idx} className="waiting-player">
+                    <span className="player-icon">👤</span>
+                    <span className="player-name">{name}</span>
+                    {idx === 0 && <span className="host-badge">Host</span>}
+                  </div>
+                ))}
               </div>
             </div>
-            <p className="player-count">
-              {gameState.players_joined || 1} of {gameState.num_players} players joined
-            </p>
+
             {canStart && (
               <button 
                 className="start-btn"

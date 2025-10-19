@@ -282,11 +282,19 @@ async def start_game(
         raise HTTPException(status_code=404, detail="Game not found")
     
     # Verify creator
-    if not session_manager.start_game(game_id, token):
+    session = session_manager.get_session(token)
+    game_session = session_manager.get_game_session(game_id)
+    
+    if not game_session:
+        raise HTTPException(status_code=404, detail="Game session not found")
+    
+    if game_session.creator_token != token:
         raise HTTPException(
             status_code=403,
-            detail="Only game creator can start the game"
+            detail="Only the creator of the game can start the game"
         )
+    
+    game_session.started = True
     
     game = active_games[game_id]
     
@@ -320,9 +328,10 @@ async def get_game_state(
     game = active_games[game_id]
     session = session_manager.get_session(token)
     
-    # Get game state and add actual player count
+    # Get game state and add actual player count and names
     state = game.to_dict(viewing_player=session.player_number)
     state['players_joined'] = len(game_players.get(game_id, {}))
+    state['joined_player_names'] = list(game_players.get(game_id, {}).values())
     
     return state
 
