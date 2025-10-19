@@ -52,7 +52,7 @@ Quantum-Poker/
     - Option 4: TBD
     - Option 5: TBD
 
-## 🔬 Features
+##  Features
 
 -  **Quantum Card Encoding**: Each card represented by 6 qubits (4 for rank, 2 for suit)
 -  **Entanglement System**: Players can entangle their cards with community cards
