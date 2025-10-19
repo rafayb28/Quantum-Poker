@@ -140,7 +140,7 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
                 {gameState.community_cards && Object.keys(gameState.community_cards).length > 0 ? (
                   Object.entries(gameState.community_cards).map(([id, card]) => (
                     <div key={id} className="card">
-                      {card.rank} {card.suit}
+                      {card ? `${card.rank} ${card.suit}` : '???'}
                     </div>
                   ))
                 ) : (
