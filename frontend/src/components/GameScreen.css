@@ -127,12 +127,23 @@
   color: #fff;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  min-width: 80px;
 }
 
 .copy-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
+}
+
+.copy-btn.copied {
+  background: #4caf50;
+  color: #fff;
+}
+
+.copy-btn.copied:hover {
+  background: #4caf50;
+  transform: none;
 }
 
 .player-count {

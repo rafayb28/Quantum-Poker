@@ -293,10 +293,11 @@ async def start_game(
     if len(game_players[game_id]) < 2:
         raise HTTPException(status_code=400, detail="Need at least 2 players to start")
     
-    # Deal hole cards and post blinds
-    game.deal_hole_cards()
-    game.post_blinds()
-    game.current_round = "pre-flop"
+    # Start the game (deals cards, posts blinds, transitions to pre-flop)
+    try:
+        game.start_game()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
     return {
         "message": "Game started",
@@ -319,7 +320,11 @@ async def get_game_state(
     game = active_games[game_id]
     session = session_manager.get_session(token)
     
-    return game.to_dict(viewing_player=session.player_number)
+    # Get game state and add actual player count
+    state = game.to_dict(viewing_player=session.player_number)
+    state['players_joined'] = len(game_players.get(game_id, {}))
+    
+    return state
 
 
 @app.post("/game/{game_id}/action")

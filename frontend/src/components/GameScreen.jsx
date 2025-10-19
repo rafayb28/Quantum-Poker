@@ -7,6 +7,7 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [actionInProgress, setActionInProgress] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const fetchGameState = async () => {
     try {
@@ -104,7 +105,6 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
         {/* Header */}
         <div className="game-header">
           <div className="game-info">
-            <span className="game-id">Game: {gameId.slice(0, 8)}...</span>
             <span className="round-info">Round: {gameState.round}</span>
             <span className="pot-info">Pot: ${gameState.pot}</span>
           </div>
@@ -122,24 +122,27 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
               <div className="game-id-display">
                 <code>{gameId}</code>
                 <button 
-                  className="copy-btn"
+                  className={`copy-btn ${copied ? 'copied' : ''}`}
                   onClick={() => {
                     navigator.clipboard.writeText(gameId)
-                    alert('Game ID copied to clipboard!')
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
                   }}
                 >
-                  Copy
+                  {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
             </div>
-            <p className="player-count">{gameState.players.length} / {gameState.num_players} players joined</p>
+            <p className="player-count">
+              {gameState.players_joined || 1} of {gameState.num_players} players joined
+            </p>
             {canStart && (
               <button 
                 className="start-btn"
                 onClick={handleStartGame}
-                disabled={actionInProgress || gameState.players.length < 2}
+                disabled={actionInProgress || (gameState.players_joined || 1) < 2}
               >
-                {gameState.players.length < 2 ? 'Waiting for more players...' : 'Start Game'}
+                {(gameState.players_joined || 1) < 2 ? 'Waiting for more players...' : 'Start Game'}
               </button>
             )}
             {!canStart && <p className="waiting-message">Waiting for host to start the game...</p>}

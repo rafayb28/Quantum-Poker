@@ -46,7 +46,7 @@ class QuantumPoker:
         self.river: Optional[Card] = None
 
         # Game state
-        self.current_round = "pre-flop"  # pre-flop, flop, turn, river, showdown
+        self.current_round = "waiting"  # waiting, pre-flop, flop, turn, river, showdown
         self.pot = 0
         self.current_bet = 0
         self.dealer_position = 0
@@ -59,10 +59,32 @@ class QuantumPoker:
         self.hand_number = 0
         self.session_active = False
         self.hands_played = 0
+        self.game_started = False
 
     def shuffle_deck(self):
         """Shuffle the deck randomly."""
         random.shuffle(self.deck)
+
+    def start_game(self):
+        """
+        Start the game by dealing initial cards and posting blinds.
+        Transitions from 'waiting' to 'pre-flop' state.
+        """
+        if self.game_started:
+            raise ValueError("Game has already been started")
+        
+        if self.current_round != "waiting":
+            raise ValueError("Game must be in 'waiting' state to start")
+        
+        # Transition to pre-flop
+        self.current_round = "pre-flop"
+        self.game_started = True
+        
+        # Post blinds
+        self.post_blinds()
+        
+        # Deal hole cards to all players
+        self.deal_hole_cards()
 
     def deal_hole_cards(self):
         """
