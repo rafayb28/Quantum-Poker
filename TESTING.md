@@ -1,6 +1,40 @@
-# Testing Checklist
+# Testing Guide
 
-## Setup
+## Automated Testing (Recommended! ✨)
+
+### Running E2E Tests
+
+**Prerequisites:**
+1. Backend must be running: `python -m uvicorn src.api:app --reload`
+2. Frontend will auto-start during tests
+
+**Run tests:**
+```bash
+cd frontend
+npm run test:e2e           # Run all tests (headless)
+npm run test:e2e:headed    # See browser during tests
+npm run test:e2e:ui        # Interactive UI mode (recommended for debugging)
+```
+
+**What the tests cover:**
+- ✅ Two players creating and joining a game
+- ✅ Starting a game with 2 players
+- ✅ Verifying game state for both players
+- ✅ Testing that 1 player can't start alone
+- ✅ Player leaving and rejoining
+
+**Benefits:**
+- 🚀 Runs in ~30 seconds vs 5+ minutes manual
+- 🎯 Tests exactly what users do
+- 🔄 Can run repeatedly without fatigue
+- 📸 Screenshots on failure
+- 📝 HTML report generated
+
+---
+
+## Manual Testing Checklist
+
+### Setup
 - [ ] Backend running on port 8000
 - [ ] Frontend running on port 3000
 - [ ] No console errors in browser
