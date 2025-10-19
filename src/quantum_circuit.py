@@ -68,7 +68,7 @@ class QuantumPokerCircuit:
         card.register = register
 
         # Prepare the card state
-        card.prepare(self.circuit)
+        card.prepare(self.circuit, start_idx)
 
         return register
 
