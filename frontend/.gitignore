@@ -6,6 +6,11 @@ dist/
 *.log
 npm-debug.log*
 
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
+
 # Environment
 .env
 .env.local
