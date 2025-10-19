@@ -677,7 +677,7 @@ class QuantumPoker:
             "pot": self.pot,
             "current_bet": self.current_bet,
             "dealer_position": self.dealer_position,
-            "current_player": self.current_player_idx,
+            "current_player": self.current_player_idx + 1,  # Convert to 1-indexed to match player numbers
             "players": [p.to_dict(reveal_cards=(viewing_player is None or p.number == viewing_player)) for p in self.players],
             "community_cards": {
                 "flop": [{"suit": c.suit, "rank": c.rank} for c in self.flop if c] if any(self.flop) else [],

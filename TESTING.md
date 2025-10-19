@@ -21,13 +21,17 @@ npm run test:e2e:ui        # Interactive UI mode (recommended for debugging)
 - ✅ Starting a game with 2 players
 - ✅ Verifying game state for both players
 - ✅ Testing that 1 player can't start alone
-- ✅ Player leaving and rejoining
+- ✅ Player leaving game functionality
+- ✅ **Poker actions: fold, check, call**
+- ✅ **Turn-based gameplay**
+- ✅ **Fold action with FOLDED badge verification**
 
 **Benefits:**
-- 🚀 Runs in ~30 seconds vs 5+ minutes manual
+- 🚀 Runs in ~42 seconds vs 5+ minutes manual
 - 🎯 Tests exactly what users do
 - 🔄 Can run repeatedly without fatigue
 - 📸 Screenshots on failure
+- 🎮 Tests actual poker gameplay now!
 - 📝 HTML report generated
 
 ---
