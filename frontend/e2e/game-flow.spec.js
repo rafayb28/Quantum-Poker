@@ -169,4 +169,159 @@ test.describe('Two-Player Game Flow', () => {
       await player2Context.close();
     }
   });
+
+  test('should allow players to perform poker actions during gameplay', async ({ browser }) => {
+    const player1Context = await browser.newContext();
+    const player2Context = await browser.newContext();
+    
+    const player1Page = await player1Context.newPage();
+    const player2Page = await player2Context.newPage();
+
+    try {
+      await test.step('Setup: Players join and start game', async () => {
+        // Player 1 setup
+        await player1Page.goto('/');
+        await player1Page.fill('input[type="text"]', 'ActionPlayer1');
+        await player1Page.click('button:has-text("Enter")');
+        await player1Page.click('button:has-text("Create Game")');
+        
+        const gameId = await player1Page.locator('code').textContent();
+
+        // Player 2 setup
+        await player2Page.goto('/');
+        await player2Page.fill('input[type="text"]', 'ActionPlayer2');
+        await player2Page.click('button:has-text("Enter")');
+        await player2Page.fill('input[placeholder*="Game ID"]', gameId);
+        await player2Page.click('button:has-text("Join Game")');
+        
+        await player2Page.waitForTimeout(1000);
+
+        // Start game
+        await player1Page.click('button:has-text("Start Game")');
+        await expect(player1Page.locator('text=Round: pre-flop')).toBeVisible({ timeout: 5000 });
+        await expect(player2Page.locator('text=Round: pre-flop')).toBeVisible({ timeout: 5000 });
+      });
+
+      await test.step('Players take turns performing actions', async () => {
+        // Wait for game state to be fully loaded with polling (2 second polling interval)
+        await player1Page.waitForTimeout(3000);
+        await player2Page.waitForTimeout(3000);
+        
+        // Check for action buttons on both pages
+        const player1HasActions = await player1Page.locator('button:has-text("Fold")').isVisible();
+        const player2HasActions = await player2Page.locator('button:has-text("Fold")').isVisible();
+        
+        console.log('Player 1 has action buttons:', player1HasActions);
+        console.log('Player 2 has action buttons:', player2HasActions);
+        
+        if (player1HasActions) {
+          // Player 1's turn
+          await expect(player1Page.locator('button:has-text("Check")')).toBeVisible();
+          await player1Page.click('button:has-text("Check")');
+          console.log('Player 1 checked');
+          await player1Page.waitForTimeout(3000); // Wait for polling to update state
+          
+          // Now Player 2's turn
+          await expect(player2Page.locator('button:has-text("Call")')).toBeVisible({ timeout: 8000 });
+          await player2Page.click('button:has-text("Call")');
+          console.log('Player 2 called');
+        } else if (player2HasActions) {
+          // Player 2's turn first
+          await expect(player2Page.locator('button:has-text("Check")')).toBeVisible();
+          await player2Page.click('button:has-text("Check")');
+          console.log('Player 2 checked');
+          await player2Page.waitForTimeout(3000); // Wait for polling to update state
+          
+          // Now Player 1's turn
+          await expect(player1Page.locator('button:has-text("Call")')).toBeVisible({ timeout: 8000 });
+          await player1Page.click('button:has-text("Call")');
+          console.log('Player 1 called');
+        } else {
+          throw new Error('Neither player has action buttons - game may not have started properly');
+        }
+        
+        console.log('✅ Both players successfully performed actions');
+      });
+
+      await test.step('Verify game continues after actions', async () => {
+        // After both players act, game should still be active
+        await player1Page.waitForTimeout(2000);
+        
+        // Should still see game elements
+        await expect(player1Page.locator('text=Pot:')).toBeVisible();
+        await expect(player2Page.locator('text=Pot:')).toBeVisible();
+        
+        // Check if we can progress rounds (Deal Flop button might appear)
+        const dealFlopVisible = await player1Page.locator('button:has-text("Deal Flop")').isVisible();
+        if (dealFlopVisible) {
+          console.log('✅ Game ready to progress to flop');
+        }
+      });
+
+    } finally {
+      await player1Context.close();
+      await player2Context.close();
+    }
+  });
+
+  test('should test fold action - player folds and loses', async ({ browser }) => {
+    const player1Context = await browser.newContext();
+    const player2Context = await browser.newContext();
+    
+    const player1Page = await player1Context.newPage();
+    const player2Page = await player2Context.newPage();
+
+    try {
+      await test.step('Setup game', async () => {
+        await player1Page.goto('/');
+        await player1Page.fill('input[type="text"]', 'FoldTest1');
+        await player1Page.click('button:has-text("Enter")');
+        await player1Page.click('button:has-text("Create Game")');
+        
+        const gameId = await player1Page.locator('code').textContent();
+
+        await player2Page.goto('/');
+        await player2Page.fill('input[type="text"]', 'FoldTest2');
+        await player2Page.click('button:has-text("Enter")');
+        await player2Page.fill('input[placeholder*="Game ID"]', gameId);
+        await player2Page.click('button:has-text("Join Game")');
+        await player2Page.waitForTimeout(1000);
+
+        await player1Page.click('button:has-text("Start Game")');
+        await expect(player1Page.locator('text=Round: pre-flop')).toBeVisible({ timeout: 5000 });
+      });
+
+      await test.step('Player folds', async () => {
+        await player1Page.waitForTimeout(3000);
+        
+        const player1HasActions = await player1Page.locator('button:has-text("Fold")').isVisible();
+        const player2HasActions = await player2Page.locator('button:has-text("Fold")').isVisible();
+        
+        if (player1HasActions) {
+          // Player 1 folds
+          await player1Page.click('button:has-text("Fold")');
+          console.log('Player 1 clicked fold button');
+          await player1Page.waitForTimeout(3000);
+          
+          // Player 1 should see FOLDED badge on their player info
+          await expect(player1Page.locator('text=FOLDED')).toBeVisible({ timeout: 5000 });
+          console.log('✅ Player 1 folded successfully');
+        } else if (player2HasActions) {
+          // Player 2 folds
+          await player2Page.click('button:has-text("Fold")');
+          console.log('Player 2 clicked fold button');
+          await player2Page.waitForTimeout(3000);
+          
+          await expect(player2Page.locator('text=FOLDED')).toBeVisible({ timeout: 5000 });
+          console.log('✅ Player 2 folded successfully');
+        } else {
+          throw new Error('Neither player has fold button - game may not have started properly');
+        }
+      });
+
+    } finally {
+      await player1Context.close();
+      await player2Context.close();
+    }
+  });
 });
