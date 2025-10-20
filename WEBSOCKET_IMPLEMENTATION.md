@@ -1,6 +1,25 @@
-# WebSocket Real-Time Updates Implementation
+# WebSocket Real-Time Updates - REVERTED
 
-## What Was Implemented
+## ⚠️ Status: REVERTED TO POLLING
+
+WebSocket implementation was attempted but caused all E2E tests to fail. Reverted back to 2-second polling which works reliably.
+
+## Why WebSocket Failed
+
+1. **Connection Issues**: WebSocket connections were closing immediately with code 1005
+2. **Reconnection Loops**: Frontend kept reconnecting endlessly, never maintaining stable connection
+3. **Test Failures**: All 7 Playwright E2E tests failed with timeout errors
+4. **Complexity**: Added significant complexity without clear benefits for 2-player game
+
+## Current Working Solution: Polling
+
+The game now uses simple HTTP polling every 2 seconds:
+- ✅ All 7 E2E tests passing
+- ✅ Reliable and predictable behavior
+- ✅ Simple to understand and debug
+- ✅ Adequate latency for poker game (2s is acceptable)
+
+## What Was Attempted (For Future Reference)
 
 ### Backend (src/api.py)
 - Added `broadcast_game_state(game_id)` calls after every game-changing action:

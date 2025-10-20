@@ -177,17 +177,39 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
             <div className="community-area">
               <h3>Community Cards</h3>
               <div className="cards">
-                {gameState.community_cards && Object.keys(gameState.community_cards).length > 0 ? (
-                  Object.entries(gameState.community_cards)
-                    .filter(([id, card]) => card !== null && card !== undefined)
-                    .map(([id, card]) => (
-                      <div key={id} className="card">
-                        {`${card.rank} ${card.suit}`}
+                {(() => {
+                  const cards = []
+                  // Flop cards
+                  if (gameState.community_cards?.flop) {
+                    gameState.community_cards.flop.forEach((card, idx) => {
+                      if (card) {
+                        cards.push(
+                          <div key={`flop-${idx}`} className="card">
+                            {card.rank} of {card.suit}
+                          </div>
+                        )
+                      }
+                    })
+                  }
+                  // Turn card
+                  if (gameState.community_cards?.turn) {
+                    cards.push(
+                      <div key="turn" className="card">
+                        {gameState.community_cards.turn.rank} of {gameState.community_cards.turn.suit}
                       </div>
-                    ))
-                ) : (
-                  <p className="no-cards">No community cards yet</p>
-                )}
+                    )
+                  }
+                  // River card
+                  if (gameState.community_cards?.river) {
+                    cards.push(
+                      <div key="river" className="card">
+                        {gameState.community_cards.river.rank} of {gameState.community_cards.river.suit}
+                      </div>
+                    )
+                  }
+                  
+                  return cards.length > 0 ? cards : <p className="no-cards">No community cards yet</p>
+                })()}
               </div>
             </div>
 
@@ -220,15 +242,12 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
             <div className="hand-area">
               <h3>Your Hand</h3>
               <div className="cards">
-                {currentPlayer?.hand_identifiers && gameState.player_hands ? (
-                  currentPlayer.hand_identifiers.map((cardId, idx) => {
-                    const card = gameState.player_hands[playerNumber]?.[idx]
-                    return (
-                      <div key={cardId} className="card">
-                        {card ? `${card.rank} ${card.suit}` : '???'}
-                      </div>
-                    )
-                  })
+                {currentPlayer?.hand && currentPlayer.hand.length > 0 ? (
+                  currentPlayer.hand.map((card, idx) => (
+                    <div key={idx} className="card">
+                      {card.rank} of {card.suit}
+                    </div>
+                  ))
                 ) : (
                   <div className="card-placeholder">Waiting for game to start...</div>
                 )}

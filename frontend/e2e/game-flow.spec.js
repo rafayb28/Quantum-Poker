@@ -93,8 +93,8 @@ test.describe('Two-Player Game Flow', () => {
         await expect(player1Page.locator('text=Pot:')).toBeVisible();
         await expect(player2Page.locator('text=Pot:')).toBeVisible();
         
-        await expect(player1Page.locator('text=Community Cards')).toBeVisible();
-        await expect(player2Page.locator('text=Community Cards')).toBeVisible();
+        await expect(player1Page.locator('h3:has-text("Community Cards")')).toBeVisible();
+        await expect(player2Page.locator('h3:has-text("Community Cards")')).toBeVisible();
         
         // Both should see player info
         await expect(player1Page.locator('text=Alice')).toBeVisible();
