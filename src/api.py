@@ -270,6 +270,9 @@ async def join_game(
     game_players[game_id][player_number] = session.username
     game.players[player_number - 1].name = session.username
 
+    # Broadcast player joined to all connected players
+    await broadcast_game_state(game_id)
+
     return JoinGameResponse(
         game_id=game_id,
         player_number=player_number,
@@ -298,6 +301,9 @@ async def leave_game(
     # Clear player's game session
     session.game_id = None
     session.player_number = None
+    
+    # Broadcast player left to remaining players
+    await broadcast_game_state(game_id)
     
     return {
         "message": "Left game successfully"
@@ -341,6 +347,9 @@ async def start_game(
         game.start_game()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+    # Broadcast game state to all connected players
+    await broadcast_game_state(game_id)
     
     return {
         "message": "Game started",
@@ -433,6 +442,9 @@ async def perform_action(
         # Move to next player
         game.current_player_idx = (game.current_player_idx + 1) % game.num_players
         
+        # Broadcast game state to all connected players
+        await broadcast_game_state(game_id)
+        
         return {
             "message": f"Action {action_type} performed",
             "result": result,
@@ -481,6 +493,9 @@ async def perform_quantum_action(
             player.use_quantum_chip()
             
             bit_effects = ["±1", "±2", "±4"]
+            
+            # Broadcast quantum action to all players
+            await broadcast_game_state(game_id)
             
             return {
                 "message": "Quantum entanglement successful",
@@ -531,6 +546,9 @@ async def trigger_showdown(
     try:
         showdown_results = game.showdown()
         
+        # Broadcast showdown results to all players
+        await broadcast_game_state(game_id)
+        
         return {
             "message": "Showdown complete",
             "results": showdown_results,
@@ -557,14 +575,17 @@ async def advance_round(
     try:
         if game.current_round == "pre-flop":
             game.deal_flop()
+            await broadcast_game_state(game_id)
             return {"message": "Flop dealt", "state": game.to_dict()}
             
         elif game.current_round == "flop":
             game.deal_turn()
+            await broadcast_game_state(game_id)
             return {"message": "Turn dealt", "state": game.to_dict()}
             
         elif game.current_round == "turn":
             game.deal_river()
+            await broadcast_game_state(game_id)
             return {"message": "River dealt", "state": game.to_dict()}
             
         elif game.current_round == "river":
