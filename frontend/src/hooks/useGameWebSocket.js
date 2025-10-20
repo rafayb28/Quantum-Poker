@@ -37,6 +37,18 @@ export function useGameWebSocket(gameId, onGameUpdate) {
         setConnected(true)
         setError(null)
         reconnectAttemptsRef.current = 0
+        
+        // Send periodic ping to keep connection alive
+        const pingInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }))
+          } else {
+            clearInterval(pingInterval)
+          }
+        }, 30000) // Ping every 30 seconds
+        
+        // Store interval ref so we can clear it on close
+        ws.pingInterval = pingInterval
       }
 
       ws.onmessage = (event) => {
@@ -60,6 +72,11 @@ export function useGameWebSocket(gameId, onGameUpdate) {
       ws.onclose = (event) => {
         console.log('WebSocket closed:', event.code, event.reason)
         setConnected(false)
+        
+        // Clear ping interval
+        if (ws.pingInterval) {
+          clearInterval(ws.pingInterval)
+        }
         
         // Attempt reconnection if not manually closed
         if (event.code !== 1000 && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {

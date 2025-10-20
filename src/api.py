@@ -608,7 +608,11 @@ websocket_connections: Dict[str, List[WebSocket]] = {}
 
 async def broadcast_game_state(game_id: str):
     """Broadcast game state to all connected clients."""
-    if game_id not in active_games or game_id not in websocket_connections:
+    if game_id not in active_games:
+        return
+    
+    # If no connections yet, that's ok - they'll get state on connect
+    if game_id not in websocket_connections or len(websocket_connections[game_id]) == 0:
         return
     
     game = active_games[game_id]
@@ -621,12 +625,16 @@ async def broadcast_game_state(game_id: str):
                 "type": "game_update",
                 "state": state
             })
-        except:
+        except Exception as e:
+            print(f"Failed to send to websocket: {e}")
             disconnected.append(websocket)
     
     # Remove disconnected clients
     for ws in disconnected:
-        websocket_connections[game_id].remove(ws)
+        try:
+            websocket_connections[game_id].remove(ws)
+        except ValueError:
+            pass  # Already removed
 
 
 @app.websocket("/ws/{game_id}")
@@ -650,15 +658,27 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
                 "state": game.to_dict()
             })
         
+        # Keep connection alive - wait for messages (mostly pings)
         while True:
-            # Receive messages from client
-            data = await websocket.receive_text()
-            
-            # Echo acknowledgment
-            await websocket.send_json({"type": "ack", "received": data})
+            try:
+                # Client sends periodic pings to keep connection alive
+                # We just need to receive them, all real updates are server-pushed
+                data = await websocket.receive_json()
+                # Can handle different message types if needed in the future
+                if data.get("type") == "ping":
+                    # Optionally send pong response
+                    await websocket.send_json({"type": "pong"})
+            except Exception:
+                # Connection closed or error receiving message
+                break
 
     except WebSocketDisconnect:
-        if game_id in websocket_connections:
+        pass
+    except Exception as e:
+        print(f"WebSocket error for game {game_id}: {e}")
+    finally:
+        # Always clean up connection
+        if game_id in websocket_connections and websocket in websocket_connections[game_id]:
             websocket_connections[game_id].remove(websocket)
         print(f"Client disconnected from game {game_id}")
 

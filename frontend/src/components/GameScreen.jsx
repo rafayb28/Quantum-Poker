@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { game } from '../api'
-import { useGameWebSocket } from '../hooks/useGameWebSocket'
 import './GameScreen.css'
 
 function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
@@ -11,42 +10,34 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
   const [copied, setCopied] = useState(false)
   const [raiseAmount, setRaiseAmount] = useState('')
 
-  // Handle WebSocket game state updates
-  const handleGameUpdate = useCallback((newState) => {
-    console.log('Game state updated via WebSocket')
-    setGameState(newState)
-    setLoading(false)
-    setError('')
-  }, [])
-
-  // Connect to WebSocket for real-time updates
-  const { connected: wsConnected, error: wsError, reconnect } = useGameWebSocket(
-    gameId,
-    handleGameUpdate
-  )
-
-  // Initial fetch (WebSocket will handle subsequent updates)
-  useEffect(() => {
-    const fetchInitialState = async () => {
-      try {
-        const response = await game.getState(gameId)
-        setGameState(response.data)
-        setError('')
-      } catch (err) {
-        setError(err.response?.data?.detail || 'Failed to fetch game state')
-      } finally {
-        setLoading(false)
-      }
+  // Fetch game state from API
+  const fetchGameState = async () => {
+    try {
+      const response = await game.getState(gameId)
+      setGameState(response.data)
+      setError('')
+      setLoading(false)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to fetch game state')
+      setLoading(false)
     }
+  }
+
+  // Initial fetch and polling for updates
+  useEffect(() => {
+    fetchGameState()
     
-    fetchInitialState()
+    // Poll every 2 seconds for game updates
+    const interval = setInterval(fetchGameState, 2000)
+    
+    return () => clearInterval(interval)
   }, [gameId])
 
   const handleStartGame = async () => {
     setActionInProgress(true)
     try {
       await game.start(gameId)
-      // WebSocket will update game state automatically
+      await fetchGameState()
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to start game')
     } finally {
@@ -58,7 +49,7 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
     setActionInProgress(true)
     try {
       await game.performAction(gameId, action, amount)
-      // WebSocket will update game state automatically
+      await fetchGameState()
     } catch (err) {
       setError(err.response?.data?.detail || 'Action failed')
     } finally {
@@ -70,7 +61,7 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
     setActionInProgress(true)
     try {
       await game.nextRound(gameId)
-      // WebSocket will update game state automatically
+      await fetchGameState()
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to advance round')
     } finally {
@@ -82,7 +73,7 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
     setActionInProgress(true)
     try {
       await game.showdown(gameId)
-      // WebSocket will update game state automatically
+      await fetchGameState()
     } catch (err) {
       setError(err.response?.data?.detail || 'Showdown failed')
     } finally {
@@ -121,9 +112,6 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
           <div className="game-info">
             <span className="round-info">Round: {gameState.round}</span>
             <span className="pot-info">Pot: ${gameState.pot}</span>
-            <span className={`ws-status ${wsConnected ? 'connected' : 'disconnected'}`}>
-              {wsConnected ? '● Live' : '○ Connecting...'}
-            </span>
           </div>
           <button className="leave-btn" onClick={onLeaveGame}>
             Leave Game
