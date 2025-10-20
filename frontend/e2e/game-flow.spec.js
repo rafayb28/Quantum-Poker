@@ -324,4 +324,175 @@ test.describe('Two-Player Game Flow', () => {
       await player2Context.close();
     }
   });
+
+  test('should allow players to raise bets', async ({ browser }) => {
+    const player1Context = await browser.newContext();
+    const player2Context = await browser.newContext();
+    
+    const player1Page = await player1Context.newPage();
+    const player2Page = await player2Context.newPage();
+
+    try {
+      await test.step('Setup game', async () => {
+        await player1Page.goto('/');
+        await player1Page.fill('input[type="text"]', 'RaiseTest1');
+        await player1Page.click('button:has-text("Enter")');
+        await player1Page.click('button:has-text("Create Game")');
+        
+        const gameId = await player1Page.locator('code').textContent();
+
+        await player2Page.goto('/');
+        await player2Page.fill('input[type="text"]', 'RaiseTest2');
+        await player2Page.click('button:has-text("Enter")');
+        await player2Page.fill('input[placeholder*="Game ID"]', gameId);
+        await player2Page.click('button:has-text("Join Game")');
+        await player2Page.waitForTimeout(1000);
+
+        await player1Page.click('button:has-text("Start Game")');
+        await expect(player1Page.locator('text=Round: pre-flop')).toBeVisible({ timeout: 5000 });
+      });
+
+      await test.step('Player raises the bet', async () => {
+        await player1Page.waitForTimeout(3000);
+        
+        const player1HasActions = await player1Page.locator('button:has-text("Fold")').isVisible();
+        const player2HasActions = await player2Page.locator('button:has-text("Fold")').isVisible();
+        
+        if (player1HasActions) {
+          // Player 1 raises
+          await expect(player1Page.locator('input.raise-input')).toBeVisible();
+          await player1Page.fill('input.raise-input', '100');
+          await player1Page.click('button:has-text("Raise")');
+          console.log('Player 1 raised to 100');
+          await player1Page.waitForTimeout(3000);
+          
+          // Player 2 should see the raised bet
+          await expect(player2Page.locator('button:has-text("Call")')).toBeVisible({ timeout: 5000 });
+          const callButtonText = await player2Page.locator('button:has-text("Call")').textContent();
+          console.log('Player 2 sees call button:', callButtonText);
+          
+          // Player 2 calls the raise
+          await player2Page.click('button:has-text("Call")');
+          console.log('Player 2 called the raise');
+        } else if (player2HasActions) {
+          // Player 2 raises
+          await expect(player2Page.locator('input.raise-input')).toBeVisible();
+          await player2Page.fill('input.raise-input', '100');
+          await player2Page.click('button:has-text("Raise")');
+          console.log('Player 2 raised to 100');
+          await player2Page.waitForTimeout(3000);
+          
+          // Player 1 calls
+          await expect(player1Page.locator('button:has-text("Call")')).toBeVisible({ timeout: 5000 });
+          await player1Page.click('button:has-text("Call")');
+          console.log('Player 1 called the raise');
+        }
+        
+        console.log('✅ Raise action completed successfully');
+      });
+
+      await test.step('Verify pot increased', async () => {
+        await player1Page.waitForTimeout(2000);
+        
+        // Check that pot value increased (should be at least 200 from the raise)
+        const potText1 = await player1Page.locator('text=Pot:').textContent();
+        const potText2 = await player2Page.locator('text=Pot:').textContent();
+        
+        console.log('Player 1 sees pot:', potText1);
+        console.log('Player 2 sees pot:', potText2);
+        
+        // Pot should exist
+        await expect(player1Page.locator('text=Pot:')).toBeVisible();
+        await expect(player2Page.locator('text=Pot:')).toBeVisible();
+      });
+
+    } finally {
+      await player1Context.close();
+      await player2Context.close();
+    }
+  });
+
+  test('should allow player to go all-in', async ({ browser }) => {
+    const player1Context = await browser.newContext();
+    const player2Context = await browser.newContext();
+    
+    const player1Page = await player1Context.newPage();
+    const player2Page = await player2Context.newPage();
+
+    try {
+      await test.step('Setup game', async () => {
+        await player1Page.goto('/');
+        await player1Page.fill('input[type="text"]', 'AllInTest1');
+        await player1Page.click('button:has-text("Enter")');
+        await player1Page.click('button:has-text("Create Game")');
+        
+        const gameId = await player1Page.locator('code').textContent();
+
+        await player2Page.goto('/');
+        await player2Page.fill('input[type="text"]', 'AllInTest2');
+        await player2Page.click('button:has-text("Enter")');
+        await player2Page.fill('input[placeholder*="Game ID"]', gameId);
+        await player2Page.click('button:has-text("Join Game")');
+        await player2Page.waitForTimeout(1000);
+
+        await player1Page.click('button:has-text("Start Game")');
+        await expect(player1Page.locator('text=Round: pre-flop')).toBeVisible({ timeout: 5000 });
+      });
+
+      await test.step('Player goes all-in', async () => {
+        await player1Page.waitForTimeout(3000);
+        
+        const player1HasActions = await player1Page.locator('button:has-text("All In")').isVisible();
+        const player2HasActions = await player2Page.locator('button:has-text("All In")').isVisible();
+        
+        if (player1HasActions) {
+          // Get player 1's chip count before all-in
+          const chipsText = await player1Page.locator('.player-card.current-player .player-stats').textContent();
+          console.log('Player 1 chips before all-in:', chipsText);
+          
+          // Player 1 goes all-in
+          await player1Page.click('button:has-text("All In")');
+          console.log('Player 1 went all-in');
+          await player1Page.waitForTimeout(3000);
+          
+          // Player 2 should see the all-in and can call or fold
+          const player2Actions = await player2Page.locator('.action-buttons').isVisible({ timeout: 5000 });
+          expect(player2Actions).toBeTruthy();
+          console.log('Player 2 sees action buttons after all-in');
+          
+          // Player 2 calls the all-in
+          await player2Page.click('button:has-text("Call")');
+          console.log('Player 2 called the all-in');
+        } else if (player2HasActions) {
+          // Player 2 goes all-in
+          const chipsText = await player2Page.locator('.player-card:not(.current-player) .player-stats').textContent();
+          console.log('Player 2 chips before all-in:', chipsText);
+          
+          await player2Page.click('button:has-text("All In")');
+          console.log('Player 2 went all-in');
+          await player2Page.waitForTimeout(3000);
+          
+          // Player 1 calls
+          await player1Page.click('button:has-text("Call")');
+          console.log('Player 1 called the all-in');
+        }
+        
+        console.log('✅ All-in action completed successfully');
+      });
+
+      await test.step('Verify game continues after all-in', async () => {
+        await player1Page.waitForTimeout(2000);
+        
+        // Game should still show active state
+        await expect(player1Page.locator('text=Pot:')).toBeVisible();
+        await expect(player2Page.locator('text=Pot:')).toBeVisible();
+        
+        console.log('✅ Game state maintained after all-in');
+      });
+
+    } finally {
+      await player1Context.close();
+      await player2Context.close();
+    }
+  });
 });

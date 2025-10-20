@@ -381,6 +381,43 @@
   color: #fff;
 }
 
+.raise-btn {
+  background: linear-gradient(45deg, #2196f3, #1976d2);
+  color: #fff;
+}
+
+.all-in-btn {
+  background: linear-gradient(45deg, #9c27b0, #7b1fa2);
+  color: #fff;
+}
+
+.raise-controls {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.raise-input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid rgba(33, 150, 243, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1rem;
+}
+
+.raise-input:focus {
+  outline: none;
+  border-color: #2196f3;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.raise-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .action-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);

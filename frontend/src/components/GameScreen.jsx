@@ -8,6 +8,7 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
   const [error, setError] = useState('')
   const [actionInProgress, setActionInProgress] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [raiseAmount, setRaiseAmount] = useState('')
 
   const fetchGameState = async () => {
     try {
@@ -255,6 +256,41 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
                       className="action-btn call-btn"
                     >
                       Call ${gameState.current_bet - currentPlayer.current_bet}
+                    </button>
+                    
+                    {/* Raise controls */}
+                    <div className="raise-controls">
+                      <input
+                        type="number"
+                        value={raiseAmount}
+                        onChange={(e) => setRaiseAmount(e.target.value)}
+                        placeholder="Raise amount"
+                        min={gameState.current_bet + 1}
+                        max={currentPlayer.chips}
+                        disabled={actionInProgress}
+                        className="raise-input"
+                      />
+                      <button 
+                        onClick={() => {
+                          const amount = parseInt(raiseAmount)
+                          if (amount && amount > gameState.current_bet) {
+                            handleAction('raise', amount)
+                            setRaiseAmount('')
+                          }
+                        }}
+                        disabled={actionInProgress || !raiseAmount || parseInt(raiseAmount) <= gameState.current_bet}
+                        className="action-btn raise-btn"
+                      >
+                        Raise
+                      </button>
+                    </div>
+                    
+                    <button 
+                      onClick={() => handleAction('all_in')}
+                      disabled={actionInProgress}
+                      className="action-btn all-in-btn"
+                    >
+                      All In (${currentPlayer.chips})
                     </button>
                   </div>
                 ) : (
