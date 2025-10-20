@@ -60,6 +60,9 @@ class QuantumPoker:
         self.session_active = False
         self.hands_played = 0
         self.game_started = False
+        
+        # Winner info from last showdown
+        self.last_winner_info = None
 
     def shuffle_deck(self):
         """Shuffle the deck randomly."""
@@ -207,6 +210,76 @@ class QuantumPoker:
             f"{player.name} entangled {source_card_id} with {target_card_id} "
             f"(bit {bit_index}: {bit_effect} rank change)"
         )
+    
+    def is_betting_round_complete(self) -> bool:
+        """
+        Check if the current betting round is complete.
+        A round is complete when:
+        1. All active players have acted
+        2. All bets are matched (everyone at same bet level or all-in)
+        3. Or only one player remains (everyone else folded)
+        """
+        # Check if only one player hasn't folded
+        active_players = [p for p in self.players if not p.folded]
+        if len(active_players) <= 1:
+            return True
+        
+        # Check if all active non-all-in players have matched the current bet
+        players_who_can_act = [p for p in active_players if not p.all_in]
+        
+        # If everyone is all-in, betting is complete
+        if not players_who_can_act:
+            return True
+        
+        # Check if all players who can act have matched the bet
+        for player in players_who_can_act:
+            if player.current_bet < self.current_bet:
+                return False
+        
+        return True
+    
+    def auto_progress_round(self) -> Dict:
+        """
+        Automatically progress to the next round if betting is complete.
+        Returns dict with info about what happened.
+        """
+        if not self.is_betting_round_complete():
+            return {"progressed": False, "message": "Betting not complete"}
+        
+        # Check for single winner (everyone else folded)
+        active_players = [p for p in self.players if not p.folded]
+        if len(active_players) == 1:
+            winner = active_players[0]
+            winner.chips += self.pot
+            return {
+                "progressed": True,
+                "action": "winner_by_fold",
+                "winner": winner.name,
+                "pot": self.pot,
+                "new_round": "complete"
+            }
+        
+        # Progress to next betting round
+        if self.current_round == "pre-flop":
+            self.deal_flop()
+            return {"progressed": True, "action": "deal_flop", "new_round": "flop"}
+        elif self.current_round == "flop":
+            self.deal_turn()
+            return {"progressed": True, "action": "deal_turn", "new_round": "turn"}
+        elif self.current_round == "turn":
+            self.deal_river()
+            return {"progressed": True, "action": "deal_river", "new_round": "river"}
+        elif self.current_round == "river":
+            # Trigger showdown
+            showdown_results = self.showdown()
+            return {
+                "progressed": True,
+                "action": "showdown",
+                "new_round": "showdown",
+                "results": showdown_results
+            }
+        
+        return {"progressed": False, "message": "Already at final round"}
 
     def betting_round(self, round_name: str = None):
         """
@@ -548,6 +621,7 @@ class QuantumPoker:
             self._award_pot_to_winners(winner_info["winners"])
 
         self.current_round = "showdown"
+        self.last_winner_info = winner_info  # Store for frontend access
 
         return {
             "results": results,
@@ -758,7 +832,7 @@ class QuantumPoker:
         Returns:
             Dictionary representing current game state
         """
-        return {
+        state = {
             "round": self.current_round,
             "pot": self.pot,
             "current_bet": self.current_bet,
@@ -772,6 +846,12 @@ class QuantumPoker:
             },
             "entanglements": self.qc_manager.get_entanglement_graph(),
         }
+        
+        # Include winner info if showdown has occurred
+        if self.current_round == "showdown" and self.last_winner_info:
+            state["winner_info"] = self.last_winner_info
+        
+        return state
     
     def to_dict(self, viewing_player: Optional[int] = None) -> Dict:
         """Alias for get_game_state for consistency."""

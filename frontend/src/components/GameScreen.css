@@ -498,3 +498,134 @@
   width: 24px;
   height: 24px;
 }
+
+/* Winner Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.winner-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 2px solid #ffd700;
+  animation: slideUp 0.4s ease-out;
+  text-align: center;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.winner-modal h2 {
+  color: #ffd700;
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.winner-announcement h3 {
+  color: #4a9eff;
+  font-size: 2rem;
+  margin-bottom: 15px;
+}
+
+.winning-hand {
+  color: #a8dadc;
+  font-size: 1.5rem;
+  margin: 15px 0;
+  font-weight: bold;
+}
+
+.pot-won {
+  color: #ffd700;
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin: 20px 0;
+}
+
+.winning-cards {
+  margin: 30px 0;
+}
+
+.winning-cards h4 {
+  color: #a8dadc;
+  margin-bottom: 15px;
+}
+
+.winning-cards .cards {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.winning-cards .card.small {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.all-hands {
+  margin: 30px 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.all-hands h4 {
+  color: #a8dadc;
+  margin-bottom: 15px;
+}
+
+.hand-result {
+  padding: 10px;
+  margin: 5px 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 5px;
+  color: #e0e0e0;
+}
+
+.close-modal-btn {
+  background: linear-gradient(135deg, #4a9eff 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(74, 158, 255, 0.4);
+}
+
+.close-modal-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 158, 255, 0.6);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}

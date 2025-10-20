@@ -442,12 +442,16 @@ async def perform_action(
         # Move to next player
         game.current_player_idx = (game.current_player_idx + 1) % game.num_players
         
+        # Check if betting round is complete and auto-progress
+        progress_info = game.auto_progress_round()
+        
         # Broadcast game state to all connected players
         await broadcast_game_state(game_id)
         
         return {
             "message": f"Action {action_type} performed",
             "result": result,
+            "progress": progress_info,
             "state": game.to_dict()
         }
         

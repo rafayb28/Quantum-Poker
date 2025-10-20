@@ -9,6 +9,8 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
   const [actionInProgress, setActionInProgress] = useState(false)
   const [copied, setCopied] = useState(false)
   const [raiseAmount, setRaiseAmount] = useState('')
+  const [showWinnerModal, setShowWinnerModal] = useState(false)
+  const [winnerInfo, setWinnerInfo] = useState(null)
 
   // Fetch game state from API
   const fetchGameState = async () => {
@@ -32,6 +34,18 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
     
     return () => clearInterval(interval)
   }, [gameId])
+  
+  // Detect showdown and extract winner info
+  useEffect(() => {
+    if (gameState && gameState.round === 'showdown') {
+      // Check if we have winner info in the most recent response
+      // This would come from the auto_progress_round response
+      if (gameState.winner_info) {
+        setWinnerInfo(gameState.winner_info)
+        setShowWinnerModal(true)
+      }
+    }
+  }, [gameState])
 
   const handleStartGame = async () => {
     setActionInProgress(true)
@@ -255,7 +269,7 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
             </div>
 
             {/* Actions */}
-            {!currentPlayer?.folded && (
+            {!currentPlayer?.folded && gameState.round !== 'showdown' && (
               <div className="actions-area">
                 {isMyTurn ? (
                   <div className="action-buttons">
@@ -266,20 +280,25 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
                     >
                       Fold
                     </button>
-                    <button 
-                      onClick={() => handleAction('check')}
-                      disabled={actionInProgress}
-                      className="action-btn check-btn"
-                    >
-                      Check
-                    </button>
-                    <button 
-                      onClick={() => handleAction('call')}
-                      disabled={actionInProgress}
-                      className="action-btn call-btn"
-                    >
-                      Call ${gameState.current_bet - currentPlayer.current_bet}
-                    </button>
+                    
+                    {/* Only show Check if no bet to call */}
+                    {gameState.current_bet === currentPlayer.current_bet ? (
+                      <button 
+                        onClick={() => handleAction('check')}
+                        disabled={actionInProgress}
+                        className="action-btn check-btn"
+                      >
+                        Check
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleAction('call')}
+                        disabled={actionInProgress}
+                        className="action-btn call-btn"
+                      >
+                        Call ${gameState.current_bet - currentPlayer.current_bet}
+                      </button>
+                    )}
                     
                     {/* Raise controls */}
                     <div className="raise-controls">
@@ -319,29 +338,64 @@ function GameScreen({ gameId, playerNumber, username, onLeaveGame }) {
                 ) : (
                   <p className="waiting-turn">Waiting for other players...</p>
                 )}
-
-                {/* Round controls */}
-                <div className="round-controls">
-                  {gameState.round === 'pre-flop' && (
-                    <button onClick={handleNextRound} disabled={actionInProgress}>
-                      Deal Flop
-                    </button>
+              </div>
+            )}
+            
+            {/* Winner Modal */}
+            {showWinnerModal && winnerInfo && (
+              <div className="modal-overlay" onClick={() => setShowWinnerModal(false)}>
+                <div className="winner-modal" onClick={(e) => e.stopPropagation()}>
+                  <h2>🎉 Hand Complete! 🎉</h2>
+                  
+                  {winnerInfo.winners && winnerInfo.winners.length === 1 ? (
+                    <>
+                      <div className="winner-announcement">
+                        <h3>{winnerInfo.winners[0].player_name} Wins!</h3>
+                        <p className="winning-hand">{winnerInfo.winners[0].hand_name}</p>
+                        <p className="pot-won">Won ${gameState.pot} pot</p>
+                      </div>
+                      
+                      {winnerInfo.winners[0].best_cards && (
+                        <div className="winning-cards">
+                          <h4>Winning Hand:</h4>
+                          <div className="cards">
+                            {winnerInfo.winners[0].best_cards.map((card, idx) => (
+                              <div key={idx} className="card small">
+                                {card.rank} of {card.suit}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : winnerInfo.winners && winnerInfo.winners.length > 1 ? (
+                    <>
+                      <div className="winner-announcement">
+                        <h3>Split Pot!</h3>
+                        <p>{winnerInfo.winners.map(w => w.player_name).join(' & ')}</p>
+                        <p className="winning-hand">{winnerInfo.winners[0].hand_name}</p>
+                        <p className="pot-won">Each wins ${Math.floor(gameState.pot / winnerInfo.winners.length)}</p>
+                      </div>
+                    </>
+                  ) : null}
+                  
+                  {winnerInfo.all_hands && (
+                    <div className="all-hands">
+                      <h4>All Hands:</h4>
+                      {Object.entries(winnerInfo.all_hands).map(([playerNum, handInfo]) => (
+                        <div key={playerNum} className="hand-result">
+                          <strong>Player {playerNum}:</strong> {handInfo.hand_name}
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  {gameState.round === 'flop' && (
-                    <button onClick={handleNextRound} disabled={actionInProgress}>
-                      Deal Turn
-                    </button>
-                  )}
-                  {gameState.round === 'turn' && (
-                    <button onClick={handleNextRound} disabled={actionInProgress}>
-                      Deal River
-                    </button>
-                  )}
-                  {gameState.round === 'river' && (
-                    <button onClick={handleShowdown} disabled={actionInProgress}>
-                      Showdown
-                    </button>
-                  )}
+                  
+                  <button 
+                    className="close-modal-btn"
+                    onClick={() => setShowWinnerModal(false)}
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
             )}
