@@ -514,35 +514,38 @@ class QuantumPoker:
 
         if has_invalid:
             print("\n⚠️  Note: Quantum errors occurred due to entanglement creating invalid card states.")
-            print("   In a real game, these cards would be re-measured or the hand re-dealt.")
+            print("   Using original (pre-measurement) cards for winner determination.")
 
-        # Evaluate hands and determine winner (if no quantum errors)
+        # Evaluate hands and determine winner
+        # If quantum errors occurred, use original cards; otherwise use measured cards
         winner_info = None
-        if not has_invalid:
+        if has_invalid:
+            winner_info = self._determine_winner_from_original_cards()
+        else:
             winner_info = self._determine_winner(decoded_cards)
             
-            if winner_info:
-                print("\n" + "=" * 40)
-                print("HAND EVALUATION")
-                print("=" * 40)
-                
-                for player_num, hand_info in winner_info["all_hands"].items():
-                    print(f"\nPlayer {player_num}: {hand_info['hand_name']}")
-                    print(f"  Best 5 cards: {', '.join([f'{c.rank} of {c.suit}' for c in hand_info['best_cards']])}")
-                
-                print("\n" + "=" * 40)
-                if len(winner_info["winners"]) == 1:
-                    winner = winner_info["winners"][0]
-                    print(f"🏆 WINNER: Player {winner['player_num']} with {winner['hand_name']}!")
-                    print(f"   Wins {self.pot} chips")
-                else:
-                    winner_nums = [w['player_num'] for w in winner_info["winners"]]
-                    print(f"🤝 TIE between Players {', '.join(map(str, winner_nums))}")
-                    print(f"   Split pot: {self.pot // len(winner_info['winners'])} chips each")
-                print("=" * 40)
-                
-                # Award pot
-                self._award_pot_to_winners(winner_info["winners"])
+        if winner_info:
+            print("\n" + "=" * 40)
+            print("HAND EVALUATION")
+            print("=" * 40)
+            
+            for player_num, hand_info in winner_info["all_hands"].items():
+                print(f"\nPlayer {player_num}: {hand_info['hand_name']}")
+                print(f"  Best 5 cards: {', '.join([f'{c.rank} of {c.suit}' for c in hand_info['best_cards']])}")
+            
+            print("\n" + "=" * 40)
+            if len(winner_info["winners"]) == 1:
+                winner = winner_info["winners"][0]
+                print(f"🏆 WINNER: Player {winner['player_num']} with {winner['hand_name']}!")
+                print(f"   Wins {self.pot} chips")
+            else:
+                winner_nums = [w['player_num'] for w in winner_info["winners"]]
+                print(f"🤝 TIE between Players {', '.join(map(str, winner_nums))}")
+                print(f"   Split pot: {self.pot // len(winner_info['winners'])} chips each")
+            print("=" * 40)
+            
+            # Award pot
+            self._award_pot_to_winners(winner_info["winners"])
 
         self.current_round = "showdown"
 
@@ -563,22 +566,24 @@ class QuantumPoker:
             Dict with winner info or None if cards are invalid
         """
         try:
-            # Reconstruct community cards
+            # Reconstruct community cards from quantum measurement
+            # decoded_cards format: {card_id: (rank, suit)}
+            # Card constructor format: Card(suit, rank)
             community_cards = []
             for i in range(3):
                 if f"F{i}" in decoded_cards:
                     rank, suit = decoded_cards[f"F{i}"]
-                    if rank != "ERROR":
+                    if rank != "ERROR" and suit != "ERROR":
                         community_cards.append(Card(suit, rank))
             
             if "T" in decoded_cards:
                 rank, suit = decoded_cards["T"]
-                if rank != "ERROR":
+                if rank != "ERROR" and suit != "ERROR":
                     community_cards.append(Card(suit, rank))
             
             if "R" in decoded_cards:
                 rank, suit = decoded_cards["R"]
-                if rank != "ERROR":
+                if rank != "ERROR" and suit != "ERROR":
                     community_cards.append(Card(suit, rank))
             
             # Evaluate each player's hand
@@ -587,13 +592,13 @@ class QuantumPoker:
                 if player.folded:
                     continue
                 
-                # Reconstruct player cards
+                # Reconstruct player cards from quantum measurement
                 player_cards = []
                 for i in range(2):
                     card_id = f"P{player.number}H{i+1}"
                     if card_id in decoded_cards:
                         rank, suit = decoded_cards[card_id]
-                        if rank != "ERROR":
+                        if rank != "ERROR" and suit != "ERROR":
                             player_cards.append(Card(suit, rank))
                 
                 if len(player_cards) == 2 and len(community_cards) >= 3:
@@ -634,8 +639,8 @@ class QuantumPoker:
             return {
                 "winners": [
                     {
-                        "player_num": w["player"]["number"],
-                        "player_name": w["player"]["name"],
+                        "player_num": w["player"].number,
+                        "player_name": w["player"].name,
                         "hand_name": w["hand_name"],
                         "kickers": w["kickers"],
                         "best_cards": w["best_cards"]
@@ -647,6 +652,87 @@ class QuantumPoker:
             
         except Exception as e:
             print(f"Error determining winner: {e}")
+            return None
+    
+    def _determine_winner_from_original_cards(self) -> Optional[Dict]:
+        """
+        Determine winner using the original (pre-measurement) cards.
+        This is used as a fallback when quantum measurement produces errors.
+        
+        Returns:
+            Dict with winner info or None if cards are invalid
+        """
+        try:
+            # Use existing flop, turn, river cards
+            community_cards = []
+            for card in self.flop:
+                if card:
+                    community_cards.append(card)
+            if self.turn:
+                community_cards.append(self.turn)
+            if self.river:
+                community_cards.append(self.river)
+            
+            # Evaluate each player's hand using their original hole cards
+            player_hands = {}
+            for player in self.players:
+                if player.folded:
+                    continue
+                
+                # Use the player's original hole cards
+                player_cards = player.hand
+                
+                if len(player_cards) == 2 and len(community_cards) >= 3:
+                    hand_name, kickers, best_cards = HandEvaluator.get_best_hand(
+                        player_cards, community_cards
+                    )
+                    player_hands[player.number] = {
+                        "hand_name": hand_name,
+                        "kickers": kickers,
+                        "best_cards": best_cards,
+                        "player": player
+                    }
+            
+            if not player_hands:
+                return None
+            
+            # Find winner(s)
+            best_hand = None
+            winners = []
+            
+            for player_num, hand_info in player_hands.items():
+                if best_hand is None:
+                    best_hand = (hand_info["hand_name"], hand_info["kickers"])
+                    winners = [hand_info]
+                else:
+                    comparison = HandEvaluator.compare_hands(
+                        (hand_info["hand_name"], hand_info["kickers"]),
+                        best_hand
+                    )
+                    if comparison > 0:
+                        # New winner
+                        best_hand = (hand_info["hand_name"], hand_info["kickers"])
+                        winners = [hand_info]
+                    elif comparison == 0:
+                        # Tie
+                        winners.append(hand_info)
+            
+            return {
+                "winners": [
+                    {
+                        "player_num": w["player"].number,
+                        "player_name": w["player"].name,
+                        "hand_name": w["hand_name"],
+                        "kickers": w["kickers"],
+                        "best_cards": w["best_cards"]
+                    }
+                    for w in winners
+                ],
+                "all_hands": player_hands
+            }
+            
+        except Exception as e:
+            print(f"Error determining winner from original cards: {e}")
             return None
     
     def _award_pot_to_winners(self, winners: List[Dict]):
