@@ -93,21 +93,12 @@ export default function GamePage() {
     }
   };
 
-  const handleQuantumEntangle = async (cardIndex: number) => {
+  const handleQuantumEntangle = async (sourceCardIndex: number, targetCardId: string) => {
     try {
-      // For now, pick random opponent and random bit (0-2)
-      // In full implementation, this would be a two-step modal
-      const opponents = players?.filter(p => p.number !== myPlayerNumber) || [];
-      if (opponents.length === 0) {
-        alert('No opponents to entangle with');
-        return;
-      }
+      // Use a fixed bit index for now (could be made selectable in future)
+      const bitIndex = 0; // Entangle bit 0 (lowest rank bit)
       
-      const targetPlayer = opponents[Math.floor(Math.random() * opponents.length)];
-      const targetCardId = `player_${targetPlayer.number}_card_${Math.floor(Math.random() * 2)}`;
-      const bitIndex = Math.floor(Math.random() * 3); // 0, 1, or 2
-      
-      await performQuantumAction(cardIndex, targetCardId, bitIndex);
+      await performQuantumAction(sourceCardIndex, targetCardId, bitIndex);
       setShowQuantumModal(false);
       await loadGameState();
     } catch (error: any) {
@@ -348,6 +339,13 @@ export default function GamePage() {
       {showQuantumModal && myPlayer && myPlayer.hand && (
         <QuantumEntangle
           myCards={myPlayer.hand}
+          communityCards={[
+            ...(community_cards?.flop || []),
+            ...(community_cards?.turn ? [community_cards.turn] : []),
+            ...(community_cards?.river ? [community_cards.river] : [])
+          ]}
+          opponents={players?.filter(p => p.number !== myPlayerNumber && p.name) || []}
+          myPlayerNumber={myPlayerNumber || 0}
           availableQuantumChips={myPlayer.quantum_chips}
           onEntangle={handleQuantumEntangle}
           onCancel={() => setShowQuantumModal(false)}

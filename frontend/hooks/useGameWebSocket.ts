@@ -15,6 +15,9 @@ export function useGameWebSocket(gameId: string | null) {
   const connect = useCallback(() => {
     if (!gameId) return;
     
+    // Only run on client-side
+    if (typeof window === 'undefined') return;
+    
     // Close existing connection
     if (wsRef.current) {
       wsRef.current.close();

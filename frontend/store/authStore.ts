@@ -29,8 +29,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const response = await api.createSession(username);
       const token = response.token;
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('username', username);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', token);
+        localStorage.setItem('username', username);
+      }
       
       set({
         token,
@@ -48,8 +50,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+    }
     
     set({
       token: null,
@@ -60,6 +64,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   
   validateToken: async () => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    
     const token = localStorage.getItem('token');
     const username = localStorage.getItem('username');
     
