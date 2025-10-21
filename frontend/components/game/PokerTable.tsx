@@ -10,7 +10,6 @@ interface PokerTableProps {
   players: Player[];
   communityCards: CommunityCardsType;
   pot: number;
-  dealerPosition: number;
   currentPlayer: number;
   myPlayerNumber: number;
 }
@@ -19,7 +18,6 @@ export default function PokerTable({
   players,
   communityCards,
   pot,
-  dealerPosition,
   currentPlayer,
   myPlayerNumber
 }: PokerTableProps) {
@@ -47,7 +45,6 @@ export default function PokerTable({
           key={player.number}
           player={player}
           position={idx}
-          isDealer={dealerPosition === idx}
           isCurrentPlayer={currentPlayer - 1 === idx}
           isMe={player.number === myPlayerNumber}
         />

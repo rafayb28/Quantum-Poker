@@ -23,7 +23,6 @@ export default function GamePage() {
     round,
     pot,
     current_bet,
-    dealer_position,
     current_player,
     community_cards,
     myPlayerNumber,
@@ -264,7 +263,6 @@ export default function GamePage() {
                 players={players}
                 communityCards={community_cards || { flop: [], turn: null, river: null }}
                 pot={pot || 0}
-                dealerPosition={dealer_position || 0}
                 currentPlayer={current_player || 0}
                 myPlayerNumber={myPlayerNumber || 1}
               />

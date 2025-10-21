@@ -4,7 +4,7 @@
 
 ### 1. Start Backend
 ```powershell
-python main.py
+python -m uvicorn src.api:app --reload
 ```
 
 ### 2. Start Frontend
@@ -21,7 +21,8 @@ npm run dev
 ## File Locations
 
 ### Key Files
-- `main.py` - Backend entry point
+- `main.py` - Demo/example game (not the server)
+- `src/api.py` - FastAPI backend server
 - `src/game.py` - Core game logic
 - `frontend/app/game/[gameId]/page.tsx` - Main game page
 - `frontend/components/game/` - Game UI components
@@ -65,7 +66,7 @@ pip install -r requirements.txt
 pytest tests/ -v
 
 # Start server
-python main.py
+python -m uvicorn src.api:app --reload
 ```
 
 ### Frontend
@@ -85,7 +86,7 @@ npm run type-check
 
 ## Game Flow
 
-1. **Pre-flop**: Players dealt 2 cards, blinds posted
+1. **Pre-flop**: All players ante 10 chips, dealt 2 cards
 2. **Betting**: Fold/check/call/raise/all-in
 3. **Flop**: 3 community cards revealed
 4. **Betting**: Another round
@@ -134,8 +135,7 @@ None currently implemented (all mouse-driven).
 - **Players**: 2-6 supported, default 2
 - **Starting chips**: 1000 per player
 - **Quantum chips**: 2 per player per hand
-- **Small blind**: 10 chips
-- **Big blind**: 20 chips
+- **Ante**: 10 chips (all players pay to enter)
 
 ## API Endpoints
 

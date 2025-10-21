@@ -24,7 +24,7 @@ def test_showdown_with_winner():
 
     # Deal cards
     game.deal_hole_cards()
-    game.post_blinds(small_blind=10, big_blind=20)
+    game.post_blinds(ante=10)
 
     print("Initial chip counts:")
     for p in game.players:

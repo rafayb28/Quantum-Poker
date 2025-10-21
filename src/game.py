@@ -428,38 +428,30 @@ class QuantumPoker:
             print(f"Quantum action failed: {e}")
             player.quantum_chips += 1  # Refund on error
     
-    def post_blinds(self, small_blind: int = 10, big_blind: int = 20):
+    def post_blinds(self, ante: int = 10):
         """
-        Post small and big blinds.
+        All players post ante to enter the round.
         
         Args:
-            small_blind: Small blind amount
-            big_blind: Big blind amount
+            ante: Ante amount (default 10 chips)
         """
-        small_blind_idx = (self.dealer_position + 1) % self.num_players
-        big_blind_idx = (self.dealer_position + 2) % self.num_players
+        print(f"\nAll players ante {ante} chips to enter")
         
-        sb_player = self.players[small_blind_idx]
-        bb_player = self.players[big_blind_idx]
+        for player in self.players:
+            if player.chips > 0 and not player.folded:
+                ante_amount = player.bet(ante)
+                self.pot += ante_amount
+                print(f"  {player.name} antes: {ante_amount}")
         
-        # Post small blind
-        sb_amount = sb_player.bet(small_blind)
-        self.pot += sb_amount
-        print(f"{sb_player.name} posts small blind: {sb_amount}")
-        
-        # Post big blind
-        bb_amount = bb_player.bet(big_blind)
-        self.pot += bb_amount
-        self.current_bet = bb_amount
-        print(f"{bb_player.name} posts big blind: {bb_amount}")
+        # No current bet after antes - everyone starts equal
+        self.current_bet = 0
     
-    def play_hand(self, small_blind: int = 10, big_blind: int = 20):
+    def play_hand(self, ante: int = 10):
         """
         Play a complete hand with all betting rounds.
         
         Args:
-            small_blind: Small blind amount
-            big_blind: Big blind amount
+            ante: Ante amount all players pay to enter (default 10)
         """
         print("\n" + "="*50)
         print("NEW HAND")
@@ -487,8 +479,8 @@ class QuantumPoker:
         print("\nDealing hole cards...")
         self.deal_hole_cards()
         
-        # Post blinds
-        self.post_blinds(small_blind, big_blind)
+        # Post ante
+        self.post_blinds(ante)
         
         # Pre-flop betting
         self.current_round = "pre-flop"
@@ -952,8 +944,8 @@ class QuantumPoker:
             if player.chips > 0:
                 print(f"  {player.name}: {player.chips} chips")
         
-        # Play hand
-        result = self.play_hand(self.small_blind, self.big_blind)
+        # Play hand with ante (default 10 from play_hand signature)
+        result = self.play_hand()
         self.hands_played += 1
         
         return result
@@ -1093,3 +1085,6 @@ def example_game():
 
 if __name__ == "__main__":
     example_game()
+
+
+#https://live.codetogether.io/#/1d27bce9-9de3-4645-b11d-20b2105e1810/9TpwgABrofxO87Hz5acuLZ

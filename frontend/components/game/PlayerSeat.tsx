@@ -4,12 +4,11 @@ import Card from '@/components/shared/Card';
 import CardBack from '@/components/shared/CardBack';
 import ChipStack from '@/components/shared/ChipStack';
 import { Player } from '@/types/game';
-import { Crown, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 interface PlayerSeatProps {
   player: Player;
   position: number;
-  isDealer: boolean;
   isCurrentPlayer: boolean;
   isMe: boolean;
   className?: string;
@@ -18,7 +17,6 @@ interface PlayerSeatProps {
 export default function PlayerSeat({
   player,
   position,
-  isDealer,
   isCurrentPlayer,
   isMe,
   className = ''
@@ -59,11 +57,6 @@ export default function PlayerSeat({
         {/* Player Info */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            {isDealer && (
-              <div className="bg-yellow-500 rounded-full p-1" title="Dealer">
-                <Crown size={16} className="text-gray-900" />
-              </div>
-            )}
             <p className="text-white font-semibold text-sm">
               {player.name}
               {isMe && <span className="text-blue-400 ml-1">(You)</span>}

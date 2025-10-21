@@ -62,25 +62,23 @@ def test_player_quantum_chips():
 
 
 def test_blinds_posting():
-    """Test blind posting."""
+    """Test ante posting (all players pay equal amount)."""
     game = QuantumPoker(num_players=3)
 
-    # Post blinds
-    game.post_blinds(small_blind=10, big_blind=20)
+    # Post antes
+    game.post_blinds(ante=10)
 
-    # Check small blind
-    sb_player = game.players[(game.dealer_position + 1) % 3]
-    assert sb_player.current_bet == 10
+    # Check all players paid ante
+    assert game.players[0].current_bet == 10
+    assert game.players[1].current_bet == 10
+    assert game.players[2].current_bet == 10
 
-    # Check big blind
-    bb_player = game.players[(game.dealer_position + 2) % 3]
-    assert bb_player.current_bet == 20
-
-    # Check pot
+    # Check pot (3 players x 10 chips)
     assert game.pot == 30
-    assert game.current_bet == 20
+    # No current bet after antes - everyone starts equal
+    assert game.current_bet == 0
 
-    print("✓ Blinds posting test passed")
+    print("✓ Ante posting test passed")
 
 
 def test_game_state_serialization():
@@ -153,7 +151,7 @@ def test_full_hand_with_betting():
 
     # Just test that the hand completes without errors
     try:
-        result = game.play_hand(small_blind=10, big_blind=20)
+        result = game.play_hand(ante=10)
         print(f"✓ Full hand completed: {result}")
     except Exception as e:
         print(f"✗ Full hand test failed: {e}")
