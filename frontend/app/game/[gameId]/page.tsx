@@ -47,10 +47,14 @@ export default function GamePage() {
         return;
       }
       
+      // Get player number from sessionStorage (set when creating/joining)
+      const storedPlayerNumber = sessionStorage.getItem(`game_${gameId}_playerNumber`);
+      const playerNumber = storedPlayerNumber ? parseInt(storedPlayerNumber, 10) : 1;
+      
       // Load initial game state
       try {
         const state = await api.getGameState(gameId);
-        setGameId(gameId, state.players?.length || 1);
+        setGameId(gameId, playerNumber);
       } catch (error) {
         console.error('Failed to load game state:', error);
       }

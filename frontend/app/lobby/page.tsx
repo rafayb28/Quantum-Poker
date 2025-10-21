@@ -25,6 +25,8 @@ export default function LobbyPage() {
     setIsCreating(true);
     try {
       const response = await api.createGame();
+      // Store player number in sessionStorage for the game page
+      sessionStorage.setItem(`game_${response.game_id}_playerNumber`, response.player_number.toString());
       router.push(`/game/${response.game_id}`);
     } catch (error: any) {
       alert(error.message || 'Failed to create game');
@@ -38,7 +40,9 @@ export default function LobbyPage() {
       return;
     }
     try {
-      await api.joinGame(joinGameId.trim());
+      const response = await api.joinGame(joinGameId.trim());
+      // Store player number in sessionStorage for the game page
+      sessionStorage.setItem(`game_${joinGameId.trim()}_playerNumber`, response.player_number.toString());
       router.push(`/game/${joinGameId.trim()}`);
     } catch (error: any) {
       alert(error.message || 'Failed to join game');
