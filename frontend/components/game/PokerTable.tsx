@@ -39,16 +39,18 @@ export default function PokerTable({
         />
       </div>
       
-      {/* Player Seats */}
-      {players.map((player, idx) => (
-        <PlayerSeat
-          key={player.number}
-          player={player}
-          position={idx}
-          isCurrentPlayer={currentPlayer - 1 === idx}
-          isMe={player.number === myPlayerNumber}
-        />
-      ))}
+      {/* Player Seats - only show players who have joined */}
+      {players
+        .filter(player => player.name && player.name.trim() !== '')
+        .map((player, idx) => (
+          <PlayerSeat
+            key={player.number}
+            player={player}
+            position={idx}
+            isCurrentPlayer={currentPlayer - 1 === (player.number - 1)}
+            isMe={player.number === myPlayerNumber}
+          />
+        ))}
     </div>
   );
 }

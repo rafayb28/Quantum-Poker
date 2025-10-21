@@ -225,12 +225,12 @@ class QuantumPoker:
         """
         Check if the current betting round is complete.
         A round is complete when:
-        1. All active players have acted at least once
+        1. All active players who have joined have acted at least once
         2. All bets are matched (everyone at same bet level or all-in)
         3. Or only one player remains (everyone else folded)
         """
         # Check if only one player hasn't folded
-        active_players = [p for p in self.players if not p.folded]
+        active_players = [p for p in self.players if not p.folded and p.name and p.name.strip()]
         if len(active_players) <= 1:
             return True
         
@@ -245,6 +245,9 @@ class QuantumPoker:
         # 1. Acted at least once this round
         # 2. Matched the current bet
         for i, player in enumerate(self.players):
+            # Skip players who haven't joined
+            if not player.name or not player.name.strip():
+                continue
             if player.folded or player.all_in:
                 continue
             
@@ -262,6 +265,9 @@ class QuantumPoker:
             # Check if all players after the aggressor have acted
             for i in range(self.num_players):
                 player = self.players[i]
+                # Skip players who haven't joined
+                if not player.name or not player.name.strip():
+                    continue
                 if player.folded or player.all_in:
                     continue
                 if i not in self.players_acted_this_round:
@@ -291,11 +297,12 @@ class QuantumPoker:
             # Post-flop rounds start with player after dealer
             self.current_player_idx = (self.dealer_position + 1) % self.num_players
         
-        # Skip to first non-folded, non-all-in player
+        # Skip to first non-folded, non-all-in player who has joined
         attempts = 0
         while attempts < self.num_players:
             player = self.players[self.current_player_idx]
-            if not player.folded and not player.all_in:
+            # Skip if: folded, all-in, OR hasn't joined the game (empty name)
+            if not player.folded and not player.all_in and player.name and player.name.strip():
                 break
             self.current_player_idx = (self.current_player_idx + 1) % self.num_players
             attempts += 1

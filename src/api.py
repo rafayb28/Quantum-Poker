@@ -503,12 +503,13 @@ async def perform_action(
         # Mark this player as having acted this round
         game.players_acted_this_round.add(player_number - 1)
         
-        # Move to next player (skip folded/all-in players)
+        # Move to next player (skip folded/all-in players AND players who haven't joined)
         attempts = 0
         game.current_player_idx = (game.current_player_idx + 1) % game.num_players
         while attempts < game.num_players:
             next_player = game.players[game.current_player_idx]
-            if not next_player.folded and not next_player.all_in:
+            # Skip if: folded, all-in, OR hasn't joined the game (empty name)
+            if not next_player.folded and not next_player.all_in and next_player.name and next_player.name.strip():
                 break
             game.current_player_idx = (game.current_player_idx + 1) % game.num_players
             attempts += 1

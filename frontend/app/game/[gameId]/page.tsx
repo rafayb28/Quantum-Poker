@@ -181,7 +181,7 @@ export default function GamePage() {
             <Users className="mx-auto mb-4 text-yellow-500" size={48} />
             <h2 className="text-2xl font-bold text-white mb-2">Waiting for Players</h2>
             <p className="text-gray-400 mb-4">
-              {playersJoined} / {players?.length ?? 0} players joined
+              {playersJoined} player{playersJoined !== 1 ? 's' : ''} joined (max 6)
             </p>
             
             {/* Player List */}
@@ -326,8 +326,8 @@ export default function GamePage() {
                 <h3 className="text-white font-bold mb-3">Game Info</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Players:</span>
-                    <span className="text-white">{players?.length ?? 0}</span>
+                    <span className="text-gray-400">Active Players:</span>
+                    <span className="text-white">{playersJoined}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Pot:</span>
