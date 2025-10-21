@@ -93,11 +93,8 @@ export default function GamePage() {
     }
   };
 
-  const handleQuantumEntangle = async (sourceCardIndex: number, targetCardId: string) => {
+  const handleQuantumEntangle = async (sourceCardIndex: number, targetCardId: string, bitIndex: number) => {
     try {
-      // Use a fixed bit index for now (could be made selectable in future)
-      const bitIndex = 0; // Entangle bit 0 (lowest rank bit)
-      
       await performQuantumAction(sourceCardIndex, targetCardId, bitIndex);
       setShowQuantumModal(false);
       await loadGameState();

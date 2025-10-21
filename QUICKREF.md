@@ -99,10 +99,15 @@ npm run type-check
 ## Quantum Actions
 
 - Click "Quantum Entangle" button
-- Select one of your cards
-- Costs 1 quantum chip
-- Affects rank only (bits 0-2)
-- Collapses at showdown
+- **Step 1**: Select one of your cards (source)
+- **Step 2**: Select target card (your other card, community card, or opponent's card)
+- **Step 3**: Choose which rank bit to entangle:
+  - **Bit 0**: ±1 rank change (small)
+  - **Bit 1**: ±2 rank change (medium)
+  - **Bit 2**: ±4 rank change (large)
+- Costs 1 quantum chip per entanglement
+- Only affects rank bits (not suit)
+- Cards collapse to actual values at showdown
 
 ## Keyboard Shortcuts
 

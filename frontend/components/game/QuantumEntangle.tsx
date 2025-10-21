@@ -12,7 +12,7 @@ interface QuantumEntangleProps {
   opponents: Player[];
   myPlayerNumber: number;
   availableQuantumChips: number;
-  onEntangle: (sourceCardIndex: number, targetCardId: string) => void;
+  onEntangle: (sourceCardIndex: number, targetCardId: string, bitIndex: number) => void;
   onCancel: () => void;
 }
 
@@ -27,6 +27,7 @@ export default function QuantumEntangle({
 }: QuantumEntangleProps) {
   const [sourceCard, setSourceCard] = useState<number | null>(null);
   const [targetCardId, setTargetCardId] = useState<string | null>(null);
+  const [bitIndex, setBitIndex] = useState<number>(0);
 
   const handleSourceSelect = (index: number) => {
     setSourceCard(index);
@@ -46,7 +47,7 @@ export default function QuantumEntangle({
 
   const handleConfirm = () => {
     if (sourceCard !== null && targetCardId !== null) {
-      onEntangle(sourceCard, targetCardId);
+      onEntangle(sourceCard, targetCardId, bitIndex);
     }
   };
 
@@ -179,6 +180,35 @@ export default function QuantumEntangle({
           ))}
         </div>
 
+        {/* Step 3: Select Bit to Entangle */}
+        <div className="mb-8">
+          <h3 className="text-white font-semibold mb-4 flex items-center">
+            <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">3</span>
+            Select Rank Bit to Entangle
+          </h3>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { bit: 0, label: 'Bit 0', effect: '±1 rank', description: 'Small change (e.g., 7→6 or 7→8)' },
+              { bit: 1, label: 'Bit 1', effect: '±2 rank', description: 'Medium change (e.g., 7→5 or 7→9)' },
+              { bit: 2, label: 'Bit 2', effect: '±4 rank', description: 'Large change (e.g., 7→3 or 7→J)' }
+            ].map(({ bit, label, effect, description }) => (
+              <button
+                key={bit}
+                onClick={() => setBitIndex(bit)}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  bitIndex === bit
+                    ? 'border-purple-500 bg-purple-600/30'
+                    : 'border-gray-700 bg-gray-800/50 hover:border-purple-400'
+                }`}
+              >
+                <div className="text-white font-bold mb-1">{label}</div>
+                <div className="text-purple-400 text-sm mb-1">{effect}</div>
+                <div className="text-gray-400 text-xs">{description}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Info Box */}
         <div className="bg-purple-900 bg-opacity-30 border border-purple-500 rounded-lg p-4 mb-6">
           <div className="flex items-start">
@@ -189,9 +219,10 @@ export default function QuantumEntangle({
               </p>
               <ul className="list-disc list-inside space-y-1 text-gray-400">
                 <li>Select one of your cards as the source</li>
-                <li>Then select any visible card on the table as the target</li>
-                <li>Only rank bits 0-2 are entangled (quantum superposition)</li>
-                <li>Both cards' actual values remain unknown until showdown</li>
+                <li>Select any visible card on the table as the target</li>
+                <li>Choose which rank bit to entangle (0, 1, or 2)</li>
+                <li>Creates quantum superposition between the selected bits</li>
+                <li>Cards collapse to actual values at showdown</li>
                 <li>Costs 1 quantum chip per entanglement</li>
               </ul>
             </div>
