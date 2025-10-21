@@ -1,49 +1,36 @@
-# Quantum Poker Frontend
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Minimal React frontend for testing Quantum Poker gameplay.
+## Getting Started
 
-## Setup
+First, run the development server:
 
 ```bash
-cd frontend
-npm install
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Frontend will run on http://localhost:3000
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Requirements
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-- Backend API running on http://localhost:8000
-- Node.js 18+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Features
+## Learn More
 
-- Login with temporary username
-- Create/join games
-- View game state
-- Make poker actions (fold, check, call)
-- Real-time polling (2s interval)
+To learn more about Next.js, take a look at the following resources:
 
-## Architecture
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-- Vite + React
-- Axios for API calls
-- CSS for styling (no external UI libraries)
-- Polling-based updates (no WebSocket yet)
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Development
+## Deploy on Vercel
 
-The frontend proxies API requests to the backend:
-- `/api/*` → `http://localhost:8000/*`
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-## Minimal Design
-
-This is a testing UI with only essential features:
-- No animations
-- No quantum action UI yet
-- No raise/all-in controls yet
-- No entanglement visualization
-- Basic polling instead of WebSocket
-
-These will be added after core gameplay is validated.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

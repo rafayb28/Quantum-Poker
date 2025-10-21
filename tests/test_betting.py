@@ -106,7 +106,9 @@ def test_game_state_serialization():
 def test_quantum_action_during_betting():
     """Test quantum entanglement during betting round."""
     game = QuantumPoker(num_players=2)
-    game.deal_hole_cards()
+    game.start_game()  # This calls deal_hole_cards(), posts blinds, and sets state to pre-flop
+    
+    # Now deal flop (state is already pre-flop from start_game)
     game.deal_flop()
     
     player = game.players[0]

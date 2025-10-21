@@ -9,6 +9,7 @@ from .card import Card, SUITS, RANKS
 from .player import Player
 from .quantum_circuit import QuantumPokerCircuit
 from .hand_evaluator import HandEvaluator
+from .side_pot_manager import SidePotManager
 
 
 class QuantumPoker:
@@ -25,8 +26,9 @@ class QuantumPoker:
         self.small_blind = small_blind
         self.big_blind = big_blind
         
+        # Initialize players with empty names - names will be set when players join
         self.players: List[Player] = [
-            Player(f"Player {i+1}", i + 1, starting_chips=starting_chips) for i in range(num_players)
+            Player("", i + 1, starting_chips=starting_chips) for i in range(num_players)
         ]
 
         # Initialize quantum circuit manager
@@ -810,17 +812,59 @@ class QuantumPoker:
             return None
     
     def _award_pot_to_winners(self, winners: List[Dict]):
-        """Award pot to winner(s)."""
+        """
+        Award pot to winner(s) using side pot logic for all-in scenarios.
+        """
         if not winners:
             return
         
-        pot_share = self.pot // len(winners)
+        # Check if any players are all-in (need side pots)
+        has_all_in = any(p.all_in for p in self.players if not p.folded)
         
-        for winner in winners:
-            player = next(p for p in self.players if p.number == winner["player_num"])
-            player.chips += pot_share
-        
-        self.pot = 0
+        if not has_all_in:
+            # Simple case: split pot among winners
+            pot_share = self.pot // len(winners)
+            remainder = self.pot % len(winners)
+            
+            for i, winner in enumerate(winners):
+                player = next(p for p in self.players if p.number == winner["player_num"])
+                # Give remainder to first winner(s) in position order
+                extra = 1 if i < remainder else 0
+                player.chips += pot_share + extra
+            
+            self.pot = 0
+        else:
+            # Complex case: use side pot manager
+            side_pot_mgr = SidePotManager()
+            
+            # Calculate players' total bets this hand
+            players_bets = {}
+            for player in self.players:
+                if not player.folded:
+                    # total_bet_this_round only tracks current round, we need hand total
+                    # For now, use a simple approach based on pot and all-in status
+                    players_bets[player.number] = (player.total_bet_this_round, player.all_in)
+            
+            # Calculate side pots
+            pots = side_pot_mgr.calculate_pots(players_bets)
+            
+            # Build hand rankings for side pot distribution
+            player_hands_dict = {}
+            for winner in winners:
+                player_hands_dict[winner["player_num"]] = (
+                    winner["hand_name"],
+                    winner["kickers"]
+                )
+            
+            # Award side pots
+            winnings = side_pot_mgr.award_pots(player_hands_dict)
+            
+            for player_num, amount in winnings.items():
+                player = next(p for p in self.players if p.number == player_num)
+                player.chips += amount
+                print(f"{player.name} wins {amount} chips")
+            
+            self.pot = 0
 
     def get_game_state(self, viewing_player: Optional[int] = None) -> Dict:
         """

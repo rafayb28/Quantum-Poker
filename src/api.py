@@ -317,22 +317,29 @@ async def start_game(
 ):
     """
     Start the game (deal initial cards, post blinds).
-    Only the game creator can start the game.
+    Only the game creator (player 1) can start the game.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
     
-    # Verify creator
+    # Verify creator - player 1 is always the creator
     session = session_manager.get_session(token)
     game_session = session_manager.get_game_session(game_id)
     
     if not game_session:
         raise HTTPException(status_code=404, detail="Game session not found")
     
-    if game_session.creator_token != token:
+    # Find which player number this token belongs to
+    player_number = None
+    for pnum, username in game_players.get(game_id, {}).items():
+        if username == session.username:
+            player_number = pnum
+            break
+    
+    if player_number != 1:
         raise HTTPException(
             status_code=403,
-            detail="Only the creator of the game can start the game"
+            detail="Only the creator (player 1) can start the game"
         )
     
     game_session.started = True
@@ -613,14 +620,18 @@ websocket_connections: Dict[str, List[WebSocket]] = {}
 async def broadcast_game_state(game_id: str):
     """Broadcast game state to all connected clients."""
     if game_id not in active_games:
+        print(f"[Broadcast] Game {game_id} not found in active games")
         return
     
     # If no connections yet, that's ok - they'll get state on connect
     if game_id not in websocket_connections or len(websocket_connections[game_id]) == 0:
+        print(f"[Broadcast] No WebSocket connections for game {game_id}")
         return
     
     game = active_games[game_id]
     state = game.to_dict()
+    
+    print(f"[Broadcast] Sending game state to {len(websocket_connections[game_id])} clients for game {game_id}")
     
     disconnected = []
     for websocket in websocket_connections[game_id]:
@@ -629,8 +640,9 @@ async def broadcast_game_state(game_id: str):
                 "type": "game_update",
                 "state": state
             })
+            print(f"[Broadcast] Successfully sent to one client")
         except Exception as e:
-            print(f"Failed to send to websocket: {e}")
+            print(f"[Broadcast] Failed to send to websocket: {e}")
             disconnected.append(websocket)
     
     # Remove disconnected clients
