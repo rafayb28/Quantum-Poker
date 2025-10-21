@@ -68,7 +68,7 @@ class QuantumPokerCircuit:
         card.register = register
 
         # Prepare the card state
-        card.prepare(self.circuit)
+        card.prepare(self.circuit, start_idx)
 
         return register
 
@@ -116,7 +116,7 @@ class QuantumPokerCircuit:
             raise ValueError(f"Card {card1_id} not found in circuit")
         if card2_id not in self.card_register_map:
             raise ValueError(f"Card {card2_id} not found in circuit")
-        
+
         # Only allow rank bits 0-2 (not 3 which can create invalid ranks, not 4-5 which are suit)
         if bit_index < 0 or bit_index > 2:
             raise ValueError(
@@ -134,13 +134,13 @@ class QuantumPokerCircuit:
             self.circuit.h(reg1[bit_index])
             self.circuit.cx(reg1[bit_index], reg2[bit_index])
 
-            self.entanglement_history.append(
-                (card1_id, card2_id, bit_index, "H+CNOT")
-            )
+            self.entanglement_history.append((card1_id, card2_id, bit_index, "H+CNOT"))
 
         # TODO: Implement options 2-5
         else:
-            raise NotImplementedError(f"Entanglement option {option} not yet implemented")
+            raise NotImplementedError(
+                f"Entanglement option {option} not yet implemented"
+            )
 
     def prepare_measurement(self):
         """
@@ -204,7 +204,13 @@ class QuantumPokerCircuit:
 
         return graph
 
-    def simulate(self, shots: int = 1024, filter_invalid: bool = True, max_shots: int = 50000, min_valid_ratio: float = 0.1) -> Dict:
+    def simulate(
+        self,
+        shots: int = 1024,
+        filter_invalid: bool = True,
+        max_shots: int = 50000,
+        min_valid_ratio: float = 0.1,
+    ) -> Dict:
         """
         Simulate the circuit and return measurement results.
 
@@ -233,31 +239,44 @@ class QuantumPokerCircuit:
                     valid_counts[bitstring] = count
                 else:
                     invalid_count += count
-            
+
             valid_total = sum(valid_counts.values())
             valid_ratio = valid_total / shots if shots > 0 else 0
-            
+
             if valid_counts and valid_ratio >= min_valid_ratio:
                 # Show validation statistics
-                print(f"Validation: {valid_total} valid, {invalid_count} invalid out of {shots} shots ({100*valid_ratio:.1f}% valid)")
+                print(
+                    f"Validation: {valid_total} valid, {invalid_count} invalid out of {shots} shots ({100*valid_ratio:.1f}% valid)"
+                )
                 return valid_counts
-            
+
             # If not enough valid outcomes and we haven't hit max, try more shots
             if shots < max_shots:
                 new_shots = min(shots * 3, max_shots)
-                print(f"Warning: Only {100*valid_ratio:.1f}% valid measurements ({valid_total}/{shots}). Increasing to {new_shots}...")
-                return self.simulate(shots=new_shots, filter_invalid=True, max_shots=max_shots, min_valid_ratio=min_valid_ratio)
+                print(
+                    f"Warning: Only {100*valid_ratio:.1f}% valid measurements ({valid_total}/{shots}). Increasing to {new_shots}..."
+                )
+                return self.simulate(
+                    shots=new_shots,
+                    filter_invalid=True,
+                    max_shots=max_shots,
+                    min_valid_ratio=min_valid_ratio,
+                )
             else:
                 # If we have some valid measurements, use them even if below threshold
                 if valid_counts:
-                    print(f"Note: Using {valid_total} valid measurements out of {shots} ({100*valid_ratio:.1f}% valid)")
+                    print(
+                        f"Note: Using {valid_total} valid measurements out of {shots} ({100*valid_ratio:.1f}% valid)"
+                    )
                     return valid_counts
-                
+
                 # Give up and return best effort
-                print(f"ERROR: Could not find enough valid measurements after {shots} shots!")
+                print(
+                    f"ERROR: Could not find enough valid measurements after {shots} shots!"
+                )
                 print("Returning unfiltered results. Cards may have invalid values.")
                 return counts
-        
+
         return counts
 
     def _is_valid_measurement(self, bitstring: str) -> bool:

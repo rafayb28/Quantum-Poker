@@ -18,7 +18,7 @@ def test_high_card():
         Card("Diamonds", "King"),
         Card("Clubs", "10"),
         Card("Spades", "7"),
-        Card("Hearts", "2")
+        Card("Hearts", "2"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "High Card"
@@ -33,7 +33,7 @@ def test_one_pair():
         Card("Diamonds", "Ace"),
         Card("Clubs", "10"),
         Card("Spades", "7"),
-        Card("Hearts", "2")
+        Card("Hearts", "2"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "One Pair"
@@ -48,7 +48,7 @@ def test_two_pair():
         Card("Diamonds", "Ace"),
         Card("Clubs", "King"),
         Card("Spades", "King"),
-        Card("Hearts", "2")
+        Card("Hearts", "2"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Two Pair"
@@ -63,7 +63,7 @@ def test_three_of_a_kind():
         Card("Diamonds", "10"),
         Card("Clubs", "10"),
         Card("Spades", "King"),
-        Card("Hearts", "2")
+        Card("Hearts", "2"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Three of a Kind"
@@ -78,7 +78,7 @@ def test_straight():
         Card("Diamonds", "8"),
         Card("Clubs", "7"),
         Card("Spades", "6"),
-        Card("Hearts", "5")
+        Card("Hearts", "5"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Straight"
@@ -93,7 +93,7 @@ def test_wheel_straight():
         Card("Diamonds", "2"),
         Card("Clubs", "3"),
         Card("Spades", "4"),
-        Card("Hearts", "5")
+        Card("Hearts", "5"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Straight"
@@ -108,7 +108,7 @@ def test_flush():
         Card("Hearts", "King"),
         Card("Hearts", "9"),
         Card("Hearts", "5"),
-        Card("Hearts", "2")
+        Card("Hearts", "2"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Flush"
@@ -123,7 +123,7 @@ def test_full_house():
         Card("Diamonds", "Ace"),
         Card("Clubs", "Ace"),
         Card("Spades", "King"),
-        Card("Hearts", "King")
+        Card("Hearts", "King"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Full House"
@@ -138,7 +138,7 @@ def test_four_of_a_kind():
         Card("Diamonds", "7"),
         Card("Clubs", "7"),
         Card("Spades", "7"),
-        Card("Hearts", "Ace")
+        Card("Hearts", "Ace"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Four of a Kind"
@@ -153,7 +153,7 @@ def test_straight_flush():
         Card("Hearts", "8"),
         Card("Hearts", "7"),
         Card("Hearts", "6"),
-        Card("Hearts", "5")
+        Card("Hearts", "5"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Straight Flush"
@@ -168,7 +168,7 @@ def test_royal_flush():
         Card("Spades", "King"),
         Card("Spades", "Queen"),
         Card("Spades", "Jack"),
-        Card("Spades", "10")
+        Card("Spades", "10"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Royal Flush"
@@ -183,17 +183,17 @@ def test_compare_hands():
     straight = ("Straight", [9])
     assert HandEvaluator.compare_hands(flush, straight) == 1
     assert HandEvaluator.compare_hands(straight, flush) == -1
-    
+
     # Higher pair wins
     pair_aces = ("One Pair", [14, 10, 8, 5])
     pair_kings = ("One Pair", [13, 10, 8, 5])
     assert HandEvaluator.compare_hands(pair_aces, pair_kings) == 1
-    
+
     # Kicker matters
     pair_aces_high = ("One Pair", [14, 13, 10, 8])
     pair_aces_low = ("One Pair", [14, 12, 10, 8])
     assert HandEvaluator.compare_hands(pair_aces_high, pair_aces_low) == 1
-    
+
     print("✓ Hand comparison test passed")
 
 
@@ -208,31 +208,30 @@ def test_best_hand_from_seven():
         Card("Spades", "King"),
         Card("Hearts", "Ace"),
         Card("Diamonds", "7"),
-        Card("Clubs", "2")
+        Card("Clubs", "2"),
     ]
     hand_name, kickers = HandEvaluator.evaluate_hand(cards)
     assert hand_name == "Two Pair"
     assert kickers[0] == 13  # Kings
-    assert kickers[1] == 5   # 5s
+    assert kickers[1] == 5  # 5s
     assert kickers[2] == 14  # Ace kicker
     print("✓ Best hand from 7 cards test passed")
 
 
 def test_get_best_hand():
     """Test get_best_hand method with separate player and community cards."""
-    player_cards = [
-        Card("Hearts", "Ace"),
-        Card("Diamonds", "Ace")
-    ]
+    player_cards = [Card("Hearts", "Ace"), Card("Diamonds", "Ace")]
     community_cards = [
         Card("Clubs", "King"),
         Card("Spades", "King"),
         Card("Hearts", "2"),
         Card("Diamonds", "7"),
-        Card("Clubs", "9")
+        Card("Clubs", "9"),
     ]
-    
-    hand_name, kickers, best_cards = HandEvaluator.get_best_hand(player_cards, community_cards)
+
+    hand_name, kickers, best_cards = HandEvaluator.get_best_hand(
+        player_cards, community_cards
+    )
     assert hand_name == "Two Pair"
     assert kickers[0] == 14  # Aces
     assert kickers[1] == 13  # Kings
@@ -242,7 +241,7 @@ def test_get_best_hand():
 
 if __name__ == "__main__":
     print("Running hand evaluator tests...\n")
-    
+
     test_high_card()
     test_one_pair()
     test_two_pair()
@@ -257,5 +256,5 @@ if __name__ == "__main__":
     test_compare_hands()
     test_best_hand_from_seven()
     test_get_best_hand()
-    
+
     print("\n✓ All hand evaluator tests passed!")

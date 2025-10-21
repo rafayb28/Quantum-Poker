@@ -3,7 +3,8 @@ Test the Quantum Circuit Manager and Entanglement System
 """
 
 import sys
-sys.path.insert(0, '..')
+
+sys.path.insert(0, "..")
 
 from src.quantum_circuit import QuantumPokerCircuit
 from src.card import Card
