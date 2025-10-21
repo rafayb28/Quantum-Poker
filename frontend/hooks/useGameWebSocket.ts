@@ -20,8 +20,15 @@ export function useGameWebSocket(gameId: string | null) {
       wsRef.current.close();
     }
     
+    // Get token for authentication
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No authentication token found');
+      return;
+    }
+    
     console.log(`Connecting to WebSocket: ${WS_BASE_URL}/ws/${gameId}`);
-    const ws = new WebSocket(`${WS_BASE_URL}/ws/${gameId}`);
+    const ws = new WebSocket(`${WS_BASE_URL}/ws/${gameId}?token=${encodeURIComponent(token)}`);
     
     ws.onopen = () => {
       console.log('WebSocket connected');

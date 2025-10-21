@@ -4,7 +4,7 @@ FastAPI Backend for Quantum Poker
 To run: uvicorn src.api:app --reload
 """
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Header, Depends
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Header, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -154,6 +154,7 @@ class GameState(BaseModel):
 
 games: Dict[str, any] = {}  # game_id -> QuantumPoker instance
 websocket_connections: Dict[str, List[WebSocket]] = {}  # game_id -> [websockets]
+websocket_player_mapping: Dict[int, int] = {}  # websocket id -> player_number
 
 
 # ============================================================================
@@ -514,6 +515,12 @@ async def perform_action(
             game.current_player_idx = (game.current_player_idx + 1) % game.num_players
             attempts += 1
         
+        # If we couldn't find any player who can act, check if round is complete
+        # This handles the case where everyone is all-in or folded
+        if attempts >= game.num_players:
+            # No one can act, round must be complete
+            print(f"[Action] No active players can act, forcing round completion")
+        
         # Check if betting round is complete and auto-progress
         progress_info = game.auto_progress_round()
         
@@ -683,7 +690,7 @@ websocket_connections: Dict[str, List[WebSocket]] = {}
 
 
 async def broadcast_game_state(game_id: str):
-    """Broadcast game state to all connected clients."""
+    """Broadcast game state to all connected clients with proper card visibility."""
     if game_id not in active_games:
         print(f"[Broadcast] Game {game_id} not found in active games")
         return
@@ -694,18 +701,23 @@ async def broadcast_game_state(game_id: str):
         return
     
     game = active_games[game_id]
-    state = game.to_dict()
     
     print(f"[Broadcast] Sending game state to {len(websocket_connections[game_id])} clients for game {game_id}")
     
+    # Send personalized state to each connected player
     disconnected = []
     for websocket in websocket_connections[game_id]:
         try:
+            # Get player number for this websocket connection
+            player_number = websocket_player_mapping.get(id(websocket))
+            # Generate state with proper card visibility for this specific player
+            state = game.to_dict(viewing_player=player_number)
+            
             await websocket.send_json({
                 "type": "game_update",
                 "state": state
             })
-            print(f"[Broadcast] Successfully sent to one client")
+            print(f"[Broadcast] Successfully sent to player {player_number}")
         except Exception as e:
             print(f"[Broadcast] Failed to send to websocket: {e}")
             disconnected.append(websocket)
@@ -714,29 +726,43 @@ async def broadcast_game_state(game_id: str):
     for ws in disconnected:
         try:
             websocket_connections[game_id].remove(ws)
+            # Clean up player mapping
+            ws_id = id(ws)
+            if ws_id in websocket_player_mapping:
+                del websocket_player_mapping[ws_id]
         except ValueError:
             pass  # Already removed
 
 
 @app.websocket("/ws/{game_id}")
-async def websocket_endpoint(websocket: WebSocket, game_id: str):
+async def websocket_endpoint(websocket: WebSocket, game_id: str, token: str = Query(...)):
     """
     WebSocket connection for real-time game updates.
+    Requires authentication token as query parameter.
     """
+    # Verify token and get player number
+    session = session_manager.get_session(token)
+    if not session or session.game_id != game_id:
+        await websocket.close(code=1008)  # Policy violation
+        return
+    
+    player_number = session.player_number
+    
     await websocket.accept()
 
-    # Add to connections
+    # Add to connections and map to player
     if game_id not in websocket_connections:
         websocket_connections[game_id] = []
     websocket_connections[game_id].append(websocket)
+    websocket_player_mapping[id(websocket)] = player_number
 
     try:
-        # Send initial game state
+        # Send initial game state with proper card visibility
         if game_id in active_games:
             game = active_games[game_id]
             await websocket.send_json({
                 "type": "connected",
-                "state": game.to_dict()
+                "state": game.to_dict(viewing_player=player_number)
             })
         
         # Keep connection alive - wait for messages (mostly pings)
@@ -761,7 +787,11 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         # Always clean up connection
         if game_id in websocket_connections and websocket in websocket_connections[game_id]:
             websocket_connections[game_id].remove(websocket)
-        print(f"Client disconnected from game {game_id}")
+        # Clean up player mapping
+        ws_id = id(websocket)
+        if ws_id in websocket_player_mapping:
+            del websocket_player_mapping[ws_id]
+        print(f"Player {player_number} disconnected from game {game_id}")
 
 
 # ============================================================================
