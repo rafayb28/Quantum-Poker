@@ -54,6 +54,11 @@ class QuantumPoker:
         self.dealer_position = 0
         self.current_player_idx = 0
 
+        # Betting round tracking
+        self.players_acted_this_round = set()  # Track which player indices have acted
+        self.last_aggressor_idx = -1  # Track who last raised (to know when round is complete)
+        self.betting_round_active = False
+
         # Deck index for dealing
         self.deck_index = 0
         
@@ -85,11 +90,14 @@ class QuantumPoker:
         self.current_round = "pre-flop"
         self.game_started = True
         
-        # Post blinds
+        # Post blinds (ante)
         self.post_blinds()
         
         # Deal hole cards to all players
         self.deal_hole_cards()
+        
+        # Start the first betting round
+        self.start_betting_round()
 
     def deal_hole_cards(self):
         """
@@ -217,7 +225,7 @@ class QuantumPoker:
         """
         Check if the current betting round is complete.
         A round is complete when:
-        1. All active players have acted
+        1. All active players have acted at least once
         2. All bets are matched (everyone at same bet level or all-in)
         3. Or only one player remains (everyone else folded)
         """
@@ -233,13 +241,65 @@ class QuantumPoker:
         if not players_who_can_act:
             return True
         
-        # Check if all players who can act have matched the bet
-        for player in players_who_can_act:
+        # Check if all players who can act have:
+        # 1. Acted at least once this round
+        # 2. Matched the current bet
+        for i, player in enumerate(self.players):
+            if player.folded or player.all_in:
+                continue
+            
+            # Check if player has acted
+            if i not in self.players_acted_this_round:
+                return False
+            
+            # Check if player has matched the bet
             if player.current_bet < self.current_bet:
                 return False
         
+        # If there was a raise, ensure we've gone back to the raiser
+        # (everyone after the raiser has had a chance to respond)
+        if self.last_aggressor_idx >= 0:
+            # Check if all players after the aggressor have acted
+            for i in range(self.num_players):
+                player = self.players[i]
+                if player.folded or player.all_in:
+                    continue
+                if i not in self.players_acted_this_round:
+                    return False
+        
         return True
     
+    def start_betting_round(self):
+        """
+        Initialize a new betting round by resetting tracking and player bets.
+        """
+        # Reset player bets for new round
+        for player in self.players:
+            player.reset_for_new_round()
+        
+        # Reset betting round tracking
+        self.current_bet = 0
+        self.players_acted_this_round = set()
+        self.last_aggressor_idx = -1
+        self.betting_round_active = True
+        
+        # Set starting player based on round
+        if self.current_round == "pre-flop":
+            # After ante system, start with player after dealer
+            self.current_player_idx = (self.dealer_position + 1) % self.num_players
+        else:
+            # Post-flop rounds start with player after dealer
+            self.current_player_idx = (self.dealer_position + 1) % self.num_players
+        
+        # Skip to first non-folded, non-all-in player
+        attempts = 0
+        while attempts < self.num_players:
+            player = self.players[self.current_player_idx]
+            if not player.folded and not player.all_in:
+                break
+            self.current_player_idx = (self.current_player_idx + 1) % self.num_players
+            attempts += 1
+
     def auto_progress_round(self) -> Dict:
         """
         Automatically progress to the next round if betting is complete.
@@ -248,11 +308,16 @@ class QuantumPoker:
         if not self.is_betting_round_complete():
             return {"progressed": False, "message": "Betting not complete"}
         
+        # Mark betting round as inactive
+        self.betting_round_active = False
+        
         # Check for single winner (everyone else folded)
         active_players = [p for p in self.players if not p.folded]
         if len(active_players) == 1:
             winner = active_players[0]
             winner.chips += self.pot
+            self.pot = 0
+            self.current_round = "complete"
             return {
                 "progressed": True,
                 "action": "winner_by_fold",
@@ -264,12 +329,15 @@ class QuantumPoker:
         # Progress to next betting round
         if self.current_round == "pre-flop":
             self.deal_flop()
+            self.start_betting_round()
             return {"progressed": True, "action": "deal_flop", "new_round": "flop"}
         elif self.current_round == "flop":
             self.deal_turn()
+            self.start_betting_round()
             return {"progressed": True, "action": "deal_turn", "new_round": "turn"}
         elif self.current_round == "turn":
             self.deal_river()
+            self.start_betting_round()
             return {"progressed": True, "action": "deal_river", "new_round": "river"}
         elif self.current_round == "river":
             # Trigger showdown

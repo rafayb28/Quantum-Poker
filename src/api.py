@@ -484,6 +484,10 @@ async def perform_action(
             actual_bet = player.raise_bet(game.current_bet, request.amount)
             game.pot += actual_bet
             game.current_bet = player.current_bet
+            # Mark this player as the aggressor - everyone needs to respond to this raise
+            game.last_aggressor_idx = player_number - 1
+            # Reset players_acted_this_round since everyone needs to respond to the raise
+            game.players_acted_this_round = {player_number - 1}
             result = {"action": "raise", "amount": actual_bet, "new_bet": game.current_bet}
             
         elif action_type == "all_in":
@@ -491,10 +495,23 @@ async def perform_action(
             game.pot += actual_bet
             if player.current_bet > game.current_bet:
                 game.current_bet = player.current_bet
+                # If all-in is a raise, mark as aggressor
+                game.last_aggressor_idx = player_number - 1
+                game.players_acted_this_round = {player_number - 1}
             result = {"action": "all_in", "amount": actual_bet}
         
-        # Move to next player
+        # Mark this player as having acted this round
+        game.players_acted_this_round.add(player_number - 1)
+        
+        # Move to next player (skip folded/all-in players)
+        attempts = 0
         game.current_player_idx = (game.current_player_idx + 1) % game.num_players
+        while attempts < game.num_players:
+            next_player = game.players[game.current_player_idx]
+            if not next_player.folded and not next_player.all_in:
+                break
+            game.current_player_idx = (game.current_player_idx + 1) % game.num_players
+            attempts += 1
         
         # Check if betting round is complete and auto-progress
         progress_info = game.auto_progress_round()
