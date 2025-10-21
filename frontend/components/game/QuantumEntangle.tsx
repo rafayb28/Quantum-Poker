@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card as CardType, Player } from '@/types/game';
 import Card from '@/components/shared/Card';
 import ChipStack from '@/components/shared/ChipStack';
-import { Zap, User } from 'lucide-react';
+import { Zap, User, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface QuantumEntangleProps {
   myCards: CardType[];
@@ -28,6 +28,7 @@ export default function QuantumEntangle({
   const [sourceCard, setSourceCard] = useState<number | null>(null);
   const [targetCardId, setTargetCardId] = useState<string | null>(null);
   const [bitIndex, setBitIndex] = useState<number>(0);
+  const [expandedOpponents, setExpandedOpponents] = useState<Set<number>>(new Set());
 
   const handleSourceSelect = (index: number) => {
     setSourceCard(index);
@@ -43,6 +44,18 @@ export default function QuantumEntangle({
       return;
     }
     setTargetCardId(cardId);
+  };
+
+  const toggleOpponent = (opponentNumber: number) => {
+    setExpandedOpponents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(opponentNumber)) {
+        newSet.delete(opponentNumber);
+      } else {
+        newSet.add(opponentNumber);
+      }
+      return newSet;
+    });
   };
 
   const handleConfirm = () => {
@@ -139,45 +152,75 @@ export default function QuantumEntangle({
             </div>
           )}
 
-          {/* Opponent Cards (Face Down) */}
-          {opponents.map((opponent) => (
-            <div key={opponent.number} className="mb-4">
-              <h4 className="text-gray-400 text-sm mb-3 flex items-center">
-                <User className="mr-2" size={16} />
-                {opponent.name || `Player ${opponent.number}`}'s Cards
-              </h4>
-              <div className="flex justify-center gap-4">
-                {[0, 1].map((cardIndex) => {
-                  const cardId = `P${opponent.number}H${cardIndex + 1}`;
-                  const isSourceCard = sourceCard !== null && `P${myPlayerNumber}H${sourceCard + 1}` === cardId;
-                  const card = opponent.hand?.[cardIndex];
-                  
-                  return (
-                    <button
-                      key={`opponent-${opponent.number}-${cardIndex}`}
-                      onClick={() => handleTargetSelect(cardId)}
-                      disabled={isSourceCard}
-                      className={`transform transition-all duration-200 hover:scale-105 ${
-                        targetCardId === cardId
-                          ? 'ring-4 ring-green-500 scale-110'
-                          : 'hover:ring-2 hover:ring-green-300'
-                      } ${
-                        isSourceCard
-                          ? 'opacity-50 cursor-not-allowed'
-                          : ''
-                      }`}
-                    >
-                      {/* Show face-down card for opponents */}
-                      <div className="relative">
-                        <Card card={{ rank: '?', suit: '?' }} />
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg pointer-events-none" />
-                      </div>
-                    </button>
-                  );
-                })}
+          {/* Opponent Cards (Face Down) - Collapsible */}
+          {opponents.map((opponent) => {
+            const isExpanded = expandedOpponents.has(opponent.number);
+            const hasSelectedCard = [0, 1].some(idx => 
+              targetCardId === `P${opponent.number}H${idx + 1}`
+            );
+            
+            return (
+              <div key={opponent.number} className="mb-3">
+                <button
+                  onClick={() => toggleOpponent(opponent.number)}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
+                    hasSelectedCard
+                      ? 'border-green-500 bg-green-900/20'
+                      : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center text-gray-300">
+                    <User className="mr-2" size={16} />
+                    <span className="font-medium">
+                      {opponent.name || `Player ${opponent.number}`}'s Cards
+                    </span>
+                    {hasSelectedCard && (
+                      <span className="ml-2 text-xs bg-green-600 text-white px-2 py-0.5 rounded">
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                  {isExpanded ? (
+                    <ChevronUp className="text-gray-400" size={20} />
+                  ) : (
+                    <ChevronDown className="text-gray-400" size={20} />
+                  )}
+                </button>
+                
+                {isExpanded && (
+                  <div className="flex justify-center gap-4 mt-3 px-4">
+                    {[0, 1].map((cardIndex) => {
+                      const cardId = `P${opponent.number}H${cardIndex + 1}`;
+                      const isSourceCard = sourceCard !== null && `P${myPlayerNumber}H${sourceCard + 1}` === cardId;
+                      
+                      return (
+                        <button
+                          key={`opponent-${opponent.number}-${cardIndex}`}
+                          onClick={() => handleTargetSelect(cardId)}
+                          disabled={isSourceCard}
+                          className={`transform transition-all duration-200 hover:scale-105 ${
+                            targetCardId === cardId
+                              ? 'ring-4 ring-green-500 scale-110'
+                              : 'hover:ring-2 hover:ring-green-300'
+                          } ${
+                            isSourceCard
+                              ? 'opacity-50 cursor-not-allowed'
+                              : ''
+                          }`}
+                        >
+                          {/* Show face-down card for opponents */}
+                          <div className="relative">
+                            <Card card={{ rank: '?', suit: '?' }} />
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg pointer-events-none" />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Step 3: Select Bit to Entangle */}
