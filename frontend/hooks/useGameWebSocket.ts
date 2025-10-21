@@ -47,6 +47,14 @@ export function useGameWebSocket(gameId: string | null) {
             }
             break;
             
+          case 'game_destroyed':
+            console.log('Game was destroyed by host');
+            alert(message.message || 'Host left the game. Returning to lobby...');
+            // Close WebSocket and redirect to lobby
+            ws.close();
+            window.location.href = '/lobby';
+            break;
+            
           case 'error':
             console.error('WebSocket error:', message.message);
             break;

@@ -9,7 +9,6 @@ import { PlusCircle, LogOut } from 'lucide-react';
 export default function LobbyPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [joinGameId, setJoinGameId] = useState('');
-  const [numPlayers, setNumPlayers] = useState(2);
   const router = useRouter();
   const { username, logout, validateToken } = useAuthStore();
   
@@ -25,7 +24,7 @@ export default function LobbyPage() {
   const handleCreateGame = async () => {
     setIsCreating(true);
     try {
-      const response = await api.createGame(numPlayers, 6);
+      const response = await api.createGame();
       router.push(`/game/${response.game_id}`);
     } catch (error: any) {
       alert(error.message || 'Failed to create game');
@@ -80,27 +79,9 @@ export default function LobbyPage() {
             Create New Game
           </h2>
           
-          {/* Player Count Selector */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-300 mb-3">
-              Number of Players
-            </label>
-            <div className="flex gap-2">
-              {[2, 3, 4, 5, 6].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => setNumPlayers(num)}
-                  className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
-                    numPlayers === num
-                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-          </div>
+          <p className="text-gray-400 mb-6 text-center">
+            Create a 6-player quantum poker game. You need at least one other player to start.
+          </p>
 
           <button
             onClick={handleCreateGame}
@@ -115,7 +96,7 @@ export default function LobbyPage() {
             ) : (
               <>
                 <PlusCircle size={24} />
-                Create Game
+                Create Game (6 Players Max)
               </>
             )}
           </button>

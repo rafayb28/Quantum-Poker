@@ -132,10 +132,11 @@ None currently implemented (all mouse-driven).
 
 ## Default Settings
 
-- **Players**: 2-6 supported, default 2
+- **Players**: Always 6 max (host needs 2+ to start)
 - **Starting chips**: 1000 per player
 - **Quantum chips**: 2 per player per hand
 - **Ante**: 10 chips (all players pay to enter)
+- **Host leaving**: Destroys entire game and kicks all players
 
 ## API Endpoints
 

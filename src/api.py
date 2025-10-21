@@ -100,8 +100,7 @@ class CreateSessionResponse(BaseModel):
 
 
 class CreateGameRequest(BaseModel):
-    num_players: int = 2
-    max_players: int = 6
+    pass  # No parameters needed - always create 6-player games
 
 
 class CreateGameResponse(BaseModel):
@@ -208,20 +207,21 @@ async def create_game(
 ):
     """
     Create a new quantum poker game.
+    Always creates a 6-player game.
     Requires authentication token.
     """
     game_id = str(uuid.uuid4())
     
-    # Create game session
+    # Create game session with 6 players max
     if not session_manager.create_game_session(
         game_id, 
         token, 
-        max_players=request.max_players
+        max_players=6
     ):
         raise HTTPException(status_code=400, detail="Failed to create game session")
     
-    # Initialize QuantumPoker instance
-    game = QuantumPoker(num_players=request.num_players)
+    # Initialize QuantumPoker instance with 6 players
+    game = QuantumPoker(num_players=6)
     active_games[game_id] = game
     
     # Get creator info
@@ -287,6 +287,7 @@ async def leave_game(
 ):
     """
     Leave a game (removes player from game session).
+    If the host (player 1) leaves, the entire game is destroyed and all players are kicked.
     """
     if game_id not in active_games:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -294,7 +295,52 @@ async def leave_game(
     session = session_manager.get_session(token)
     player_number = session.player_number
     
-    # Remove from game_players
+    # If host (player 1) leaves, destroy the entire game
+    if player_number == 1:
+        # Notify all connected clients that game is being destroyed
+        if game_id in websocket_connections:
+            disconnected = []
+            for websocket in websocket_connections[game_id]:
+                try:
+                    await websocket.send_json({
+                        "type": "game_destroyed",
+                        "message": "Host left the game. Game has been destroyed."
+                    })
+                except Exception as e:
+                    print(f"[Leave] Failed to notify client: {e}")
+                    disconnected.append(websocket)
+            
+            # Clean up disconnected websockets
+            for ws in disconnected:
+                websocket_connections[game_id].remove(ws)
+            
+            # Remove all websocket connections for this game
+            del websocket_connections[game_id]
+        
+        # Clear all players' sessions
+        if game_id in game_players:
+            for pnum, username in list(game_players[game_id].items()):
+                # Find and clear each player's session
+                for token_str, sess in session_manager.sessions.items():
+                    if sess.game_id == game_id:
+                        sess.game_id = None
+                        sess.player_number = None
+            del game_players[game_id]
+        
+        # Remove game from active games
+        if game_id in active_games:
+            del active_games[game_id]
+        
+        # Remove game session
+        if game_id in session_manager.game_sessions:
+            del session_manager.game_sessions[game_id]
+        
+        return {
+            "message": "Game destroyed (host left)",
+            "game_destroyed": True
+        }
+    
+    # Non-host leaving - just remove them from game
     if game_id in game_players and player_number in game_players[game_id]:
         del game_players[game_id][player_number]
     
@@ -306,7 +352,8 @@ async def leave_game(
     await broadcast_game_state(game_id)
     
     return {
-        "message": "Left game successfully"
+        "message": "Left game successfully",
+        "game_destroyed": False
     }
 
 

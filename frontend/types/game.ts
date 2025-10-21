@@ -70,12 +70,11 @@ export interface QuantumActionRequest {
 }
 
 export interface CreateGameRequest {
-  num_players: number;
-  max_players: number;
+  // No parameters needed - always creates 6-player games
 }
 
 export interface WebSocketMessage {
-  type: 'connected' | 'game_update' | 'pong' | 'error';
+  type: 'connected' | 'game_update' | 'pong' | 'error' | 'game_destroyed';
   state?: GameState;
   message?: string;
 }
