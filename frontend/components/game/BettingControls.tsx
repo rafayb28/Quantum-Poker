@@ -27,8 +27,10 @@ export default function BettingControls({
 
   const amountToCall = currentBet - myCurrentBet;
   const canCheck = amountToCall === 0;
-  const canCall = amountToCall > 0 && amountToCall <= myChips;
   const canRaise = myChips > amountToCall;
+  
+  // Detect when call/raise would be all-in for display purposes
+  const callIsAllIn = amountToCall > 0 && amountToCall >= myChips;
 
   const handleAction = async (action: string, amount?: number) => {
     setIsLoading(true);
@@ -51,7 +53,7 @@ export default function BettingControls({
     <div className="bg-gray-900/90 backdrop-blur-sm rounded-xl p-4 sm:p-6 border-2 border-yellow-500">
       <h3 className="text-white font-bold text-lg mb-4">Your Action</h3>
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-4">
         {/* Fold */}
         <button
           onClick={() => handleAction('fold')}
@@ -70,24 +72,15 @@ export default function BettingControls({
           >
             Check
           </button>
-        ) : canCall ? (
+        ) : (
           <button
             onClick={() => handleAction('call')}
             disabled={disabled || isLoading}
             className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-bold rounded-lg transition-colors disabled:cursor-not-allowed"
           >
-            Call {amountToCall}
+            {callIsAllIn ? `All-in (${myChips})` : `Call ${amountToCall}`}
           </button>
-        ) : null}
-        
-        {/* All-in */}
-        <button
-          onClick={() => handleAction('all_in')}
-          disabled={disabled || isLoading}
-          className="px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-bold rounded-lg transition-colors disabled:cursor-not-allowed"
-        >
-          All-in
-        </button>
+        )}
       </div>
       
       {/* Raise */}
@@ -121,13 +114,13 @@ export default function BettingControls({
             disabled={disabled || isLoading || raiseAmount < minRaise}
             className="w-full px-4 py-3 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white font-bold rounded-lg transition-colors disabled:cursor-not-allowed"
           >
-            Raise to {raiseAmount}
+            {raiseAmount >= myChips ? `All-in (${raiseAmount})` : `Raise to ${raiseAmount}`}
           </button>
         </div>
       )}
       
       <div className="mt-3 text-xs text-gray-400 text-center">
-        Your chips: {myChips} | Min raise: {minRaise}
+        Your chips: {myChips} | Current bet: {currentBet}
       </div>
     </div>
   );
