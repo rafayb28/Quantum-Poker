@@ -149,7 +149,7 @@ class QuantumPoker:
             player.folded = False
             player.all_in = False
             player.current_bet = 0
-            player.quantum_chips = 5  # Refresh quantum chips each hand
+            player.quantum_chips = 2  # Refresh quantum chips each hand
             player.entanglement_history = []  # Clear entanglement history
         
         # Increment hand counter
@@ -167,7 +167,8 @@ class QuantumPoker:
         Deal two hole cards to each player and add them to the quantum circuit.
         """
         for player in self.players:
-            if player.folded:
+            # Skip players who folded or never joined
+            if player.folded or not player.name or not player.name.strip():
                 continue
 
             # Deal two cards
