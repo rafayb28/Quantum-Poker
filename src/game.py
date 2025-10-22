@@ -700,7 +700,7 @@ class QuantumPoker:
         print("\n=== SHOWDOWN ===")
         
         # Check if only one player remains (shouldn't happen, but handle it)
-        active_players = [p for p in self.players if not p.folded]
+        active_players = [p for p in self.players if not p.folded and p.name and p.name.strip()]
         if len(active_players) == 1:
             winner = active_players[0]
             pot_amount = self.pot
@@ -855,7 +855,8 @@ class QuantumPoker:
             # Evaluate each player's hand
             player_hands = {}
             for player in self.players:
-                if player.folded:
+                # Skip players who folded or never joined
+                if player.folded or not player.name or not player.name.strip():
                     continue
                 
                 # Reconstruct player cards from quantum measurement
@@ -956,7 +957,8 @@ class QuantumPoker:
             # Evaluate each player's hand using their original hole cards
             player_hands = {}
             for player in self.players:
-                if player.folded:
+                # Skip players who folded or never joined
+                if player.folded or not player.name or not player.name.strip():
                     continue
                 
                 # Use the player's original hole cards
