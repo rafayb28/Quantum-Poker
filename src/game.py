@@ -673,7 +673,9 @@ class QuantumPoker:
             
             for player_num, hand_info in winner_info["all_hands"].items():
                 print(f"\nPlayer {player_num}: {hand_info['hand_name']}")
-                print(f"  Best 5 cards: {', '.join([f'{c.rank} of {c.suit}' for c in hand_info['best_cards']])}")
+                # best_cards are dicts with 'suit' and 'rank' keys
+                cards_str = ', '.join([f"{c['rank']} of {c['suit']}" for c in hand_info['best_cards']])
+                print(f"  Best 5 cards: {cards_str}")
             
             print("\n" + "=" * 40)
             if len(winner_info["winners"]) == 1:
