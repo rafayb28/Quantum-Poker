@@ -406,14 +406,23 @@ class QuantumPoker:
         if self.current_round == "pre-flop":
             self.deal_flop()
             self.start_betting_round()
+            # If everyone is all-in, immediately progress to next round
+            if self.is_betting_round_complete():
+                return self.auto_progress_round()
             return {"progressed": True, "action": "deal_flop", "new_round": "flop"}
         elif self.current_round == "flop":
             self.deal_turn()
             self.start_betting_round()
+            # If everyone is all-in, immediately progress to next round
+            if self.is_betting_round_complete():
+                return self.auto_progress_round()
             return {"progressed": True, "action": "deal_turn", "new_round": "turn"}
         elif self.current_round == "turn":
             self.deal_river()
             self.start_betting_round()
+            # If everyone is all-in, immediately progress to showdown
+            if self.is_betting_round_complete():
+                return self.auto_progress_round()
             return {"progressed": True, "action": "deal_river", "new_round": "river"}
         elif self.current_round == "river":
             # Trigger showdown
