@@ -87,5 +87,5 @@ class Player:
                 if reveal_cards
                 else None
             ),
-            "entanglement_history": self.entanglement_history if reveal_cards else [],
+            "entanglement_history": self.entanglement_history,  # Always send entanglement history
         }

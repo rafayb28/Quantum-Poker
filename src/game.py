@@ -747,6 +747,9 @@ class QuantumPoker:
         print("Final Card Values:")
         print("-" * 40)
         
+        # Get list of joined players for filtering output
+        joined_player_numbers = [str(p.number) for p in self.players if p.name and p.name.strip()]
+        
         has_invalid = False
         for card_id in self.qc_manager.registered_cards:
             rank, suit = self.qc_manager.decode_measurement(winning_bitstring, card_id)
@@ -759,9 +762,12 @@ class QuantumPoker:
             
             decoded_cards[card_id] = (rank, suit)
             
-            # Pretty print card type
+            # Pretty print card type (only for joined players)
             if card_id.startswith("P"):
                 player_num = card_id[1]
+                # Skip printing cards for players who didn't join
+                if player_num not in joined_player_numbers:
+                    continue
                 card_num = card_id[3]
                 card_display = f"{rank} of {suit}" if rank != "ERROR" else "⚠️ QUANTUM ERROR"
                 print(f"Player {player_num} - Hole Card {card_num}: {card_display}")
