@@ -412,6 +412,55 @@ async def start_game(
     }
 
 
+@app.post("/game/{game_id}/next-hand")
+async def start_next_hand(
+    game_id: str,
+    token: str = Depends(verify_game_access)
+):
+    """
+    Start the next hand after showdown.
+    Only the host (player 1) can start the next hand.
+    """
+    if game_id not in active_games:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    # Verify host - player 1 is always the host
+    session = session_manager.get_session(token)
+    game_session = session_manager.get_game_session(game_id)
+    
+    if not game_session:
+        raise HTTPException(status_code=404, detail="Game session not found")
+    
+    # Find which player number this token belongs to
+    player_number = None
+    for pnum, username in game_players.get(game_id, {}).items():
+        if username == session.username:
+            player_number = pnum
+            break
+    
+    if player_number != 1:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the host (player 1) can start next hand"
+        )
+    
+    game = active_games[game_id]
+    
+    # Start the next hand
+    try:
+        game.start_next_hand()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # Broadcast game state to all connected players
+    await broadcast_game_state(game_id)
+    
+    return {
+        "message": "Next hand started",
+        "state": game.to_dict()
+    }
+
+
 @app.get("/game/{game_id}/state")
 async def get_game_state(
     game_id: str,

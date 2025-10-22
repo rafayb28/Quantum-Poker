@@ -103,6 +103,14 @@ export default function GamePage() {
     }
   };
 
+  const handleNextHand = async () => {
+    try {
+      await api.startNextHand(gameId);
+    } catch (error: any) {
+      alert(error.message || 'Failed to start next hand');
+    }
+  };
+
   if (isLoading && (!players || players.length === 0)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 flex items-center justify-center">
@@ -286,6 +294,18 @@ export default function GamePage() {
                     </button>
                   )}
                 </>
+              )}
+              
+              {/* Next Hand Button (Showdown) */}
+              {round === 'showdown' && isHost && (
+                <button
+                  onClick={handleNextHand}
+                  disabled={!isConnected}
+                  className="w-full px-6 py-4 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold text-lg rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <span className="text-2xl">🃏</span>
+                  <span>Deal Next Hand</span>
+                </button>
               )}
               
               {/* Player Info */}

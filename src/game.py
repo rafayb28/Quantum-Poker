@@ -99,6 +99,68 @@ class QuantumPoker:
         # Start the first betting round
         self.start_betting_round()
 
+    def start_next_hand(self):
+        """
+        Start a new hand after showdown.
+        - Eliminates players with 0 chips
+        - Rotates dealer position
+        - Resets game state for new hand
+        - Deals new cards
+        """
+        if self.current_round != "showdown":
+            raise ValueError("Can only start next hand after showdown")
+        
+        # Remove players with no chips left
+        self.players = [p for p in self.players if p.chips > 0]
+        
+        if len(self.players) < 2:
+            raise ValueError("Not enough players with chips to continue")
+        
+        # Rotate dealer position
+        self.dealer_position = (self.dealer_position + 1) % len(self.players)
+        
+        # Reset game state
+        self.pot = 0
+        self.current_bet = 0
+        self.players_acted_this_round = set()
+        self.last_aggressor_idx = -1
+        self.betting_round_active = False
+        self.last_winner_info = None
+        
+        # Reset deck and shuffle
+        self.deck = []
+        for suit in SUITS:
+            for rank in RANKS:
+                self.deck.append(Card(suit, rank))
+        self.shuffle_deck()
+        self.deck_index = 0
+        
+        # Reset community cards
+        self.flop = [None, None, None]
+        self.turn = None
+        self.river = None
+        
+        # Reset quantum circuit
+        self.qc_manager = QuantumPokerCircuit()
+        
+        # Reset all players for new hand
+        for player in self.players:
+            player.hand = []
+            player.folded = False
+            player.all_in = False
+            player.current_bet = 0
+            player.quantum_chips = 2  # Refresh quantum chips each hand
+        
+        # Increment hand counter
+        self.hand_number += 1
+        self.hands_played += 1
+        
+        # Start new hand
+        self.current_round = "pre-flop"
+        self.post_blinds()
+        self.deal_hole_cards()
+        self.start_betting_round()
+
     def deal_hole_cards(self):
         """
         Deal two hole cards to each player and add them to the quantum circuit.

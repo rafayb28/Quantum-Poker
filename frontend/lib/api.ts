@@ -82,6 +82,12 @@ export const api = {
     });
   },
   
+  async startNextHand(gameId: string) {
+    return fetchWithAuth(`/game/${gameId}/next-hand`, {
+      method: 'POST',
+    });
+  },
+  
   async getGameState(gameId: string) {
     return fetchWithAuth(`/game/${gameId}/state`);
   },
