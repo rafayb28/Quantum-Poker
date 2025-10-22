@@ -325,28 +325,6 @@ export default function GamePage() {
                       <span className="text-gray-400">Current Bet:</span>
                       <span className="text-white font-bold">{myPlayer.current_bet}</span>
                     </div>
-                    
-                    {/* Entanglement History */}
-                    {myPlayer.entanglement_history && myPlayer.entanglement_history.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-700">
-                        <h4 className="text-purple-400 font-semibold mb-2 flex items-center gap-1">
-                          <span>⚛️</span>
-                          <span>Entanglements This Hand</span>
-                        </h4>
-                        <div className="space-y-2">
-                          {myPlayer.entanglement_history.map((ent, idx) => (
-                            <div key={idx} className="bg-gray-800 rounded p-2 text-xs">
-                              <div className="text-purple-300">
-                                {ent.source} ↔ {ent.target}
-                              </div>
-                              <div className="text-gray-400">
-                                Bit {ent.bit}: {ent.effect} rank
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -369,6 +347,28 @@ export default function GamePage() {
                   </div>
                 </div>
               </div>
+              
+              {/* Entanglement History */}
+              {myPlayer && myPlayer.entanglement_history && myPlayer.entanglement_history.length > 0 && (
+                <div className="bg-gray-900 rounded-xl p-4 border-2 border-purple-700">
+                  <h3 className="text-purple-400 font-bold mb-3 flex items-center gap-2">
+                    <span className="text-xl">⚛️</span>
+                    <span>Your Entanglements</span>
+                  </h3>
+                  <div className="space-y-2">
+                    {myPlayer.entanglement_history.map((ent, idx) => (
+                      <div key={idx} className="bg-gray-800 rounded-lg p-3 border border-purple-900">
+                        <div className="text-purple-300 font-medium mb-1">
+                          {ent.source} ↔ {ent.target}
+                        </div>
+                        <div className="text-gray-400 text-xs">
+                          Bit {ent.bit}: {ent.effect} rank change
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
