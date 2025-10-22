@@ -9,6 +9,7 @@ class Player:
         self.folded = False
         self.all_in = False
         self.total_bet_this_round = 0
+        self.entanglement_history = []  # Track entanglements this hand
 
     def bet(self, amount: int) -> int:
         """Place a bet. Returns actual amount bet (could be less if all-in)."""
@@ -86,4 +87,5 @@ class Player:
                 if reveal_cards
                 else None
             ),
+            "entanglement_history": self.entanglement_history if reveal_cards else [],
         }

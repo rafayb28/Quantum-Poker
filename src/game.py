@@ -149,7 +149,8 @@ class QuantumPoker:
             player.folded = False
             player.all_in = False
             player.current_bet = 0
-            player.quantum_chips = 2  # Refresh quantum chips each hand
+            player.quantum_chips = 5  # Refresh quantum chips each hand
+            player.entanglement_history = []  # Clear entanglement history
         
         # Increment hand counter
         self.hand_number += 1
@@ -276,8 +277,16 @@ class QuantumPoker:
 
         # Deduct quantum chip
         player.quantum_chips -= 1
-
+        
+        # Record entanglement in player's history
         bit_effect = ["±1", "±2", "±4"][bit_index]
+        player.entanglement_history.append({
+            "source": source_card_id,
+            "target": target_card_id,
+            "bit": bit_index,
+            "effect": bit_effect
+        })
+
         print(
             f"{player.name} entangled {source_card_id} with {target_card_id} "
             f"(bit {bit_index}: {bit_effect} rank change)"
@@ -291,6 +300,8 @@ class QuantumPoker:
         2. All bets are matched (everyone at same bet level or all-in)
         3. Or only one player remains (everyone else folded)
         """
+        print(f"[Betting Check] current_bet={self.current_bet}, last_aggressor={self.last_aggressor_idx}, acted={self.players_acted_this_round}")
+        
         # Check if only one player hasn't folded
         active_players = [p for p in self.players if not p.folded and p.name and p.name.strip()]
         if len(active_players) <= 1:
@@ -317,10 +328,12 @@ class QuantumPoker:
             
             # Check if player has acted
             if i not in self.players_acted_this_round:
+                print(f"[Betting] Player {i} ({player.name}) hasn't acted yet - round NOT complete")
                 return False
             
             # Check if player has matched the bet
             if player.current_bet < self.current_bet:
+                print(f"[Betting] Player {i} ({player.name}) bet {player.current_bet} < current {self.current_bet} - round NOT complete")
                 return False
         
         # If there was a raise, ensure we've gone back to the raiser
@@ -335,8 +348,10 @@ class QuantumPoker:
                 if player.folded or player.all_in:
                     continue
                 if i not in self.players_acted_this_round:
+                    print(f"[Betting] Player {i} ({player.name}) hasn't responded to aggressor - round NOT complete")
                     return False
         
+        print(f"[Betting] All checks passed - round IS complete!")
         return True
     
     def start_betting_round(self):

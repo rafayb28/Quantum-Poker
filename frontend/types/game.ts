@@ -5,6 +5,13 @@ export interface Card {
   rank: string;
 }
 
+export interface EntanglementRecord {
+  source: string;
+  target: string;
+  bit: number;
+  effect: string;
+}
+
 export interface Player {
   name: string;
   number: number;
@@ -15,6 +22,7 @@ export interface Player {
   folded: boolean;
   all_in: boolean;
   hand: Card[] | null; // null if cards are hidden
+  entanglement_history?: EntanglementRecord[];
 }
 
 export interface CommunityCards {

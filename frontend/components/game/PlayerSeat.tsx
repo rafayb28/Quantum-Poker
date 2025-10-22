@@ -90,20 +90,20 @@ export default function PlayerSeat({
         )}
         
         {/* Cards */}
-        <div className="flex gap-1 mt-2">
+        <div className="flex gap-2 mt-2 justify-center">
           {player.hand && player.hand.length > 0 ? (
             player.hand.map((card, idx) => (
-              <Card key={idx} card={card} className="scale-75" />
+              <Card key={idx} card={card} className="w-12 h-18 sm:w-14 sm:h-20" />
             ))
           ) : isMe ? (
             <>
-              <CardBack className="scale-75" />
-              <CardBack className="scale-75" />
+              <CardBack className="w-12 h-18 sm:w-14 sm:h-20" />
+              <CardBack className="w-12 h-18 sm:w-14 sm:h-20" />
             </>
           ) : (
             <>
-              <CardBack className="scale-75" />
-              <CardBack className="scale-75" />
+              <CardBack className="w-12 h-18 sm:w-14 sm:h-20" />
+              <CardBack className="w-12 h-18 sm:w-14 sm:h-20" />
             </>
           )}
         </div>
