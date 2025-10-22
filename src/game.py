@@ -384,14 +384,17 @@ class QuantumPoker:
         active_players = [p for p in self.players if not p.folded]
         if len(active_players) == 1:
             winner = active_players[0]
+            pot_amount = self.pot
             winner.chips += self.pot
+            print(f"\n🏆 {winner.name} wins {pot_amount} chips (all others folded)!")
+            print(f"   {winner.name} now has {winner.chips} chips")
             self.pot = 0
             self.current_round = "complete"
             return {
                 "progressed": True,
                 "action": "winner_by_fold",
                 "winner": winner.name,
-                "pot": self.pot,
+                "pot_won": pot_amount,
                 "new_round": "complete"
             }
         
@@ -667,6 +670,34 @@ class QuantumPoker:
             Dictionary with simulation results and decoded cards
         """
         print("\n=== SHOWDOWN ===")
+        
+        # Check if only one player remains (shouldn't happen, but handle it)
+        active_players = [p for p in self.players if not p.folded]
+        if len(active_players) == 1:
+            winner = active_players[0]
+            pot_amount = self.pot
+            winner.chips += self.pot
+            print(f"\n🏆 {winner.name} wins {pot_amount} chips (only player remaining)!")
+            print(f"   {winner.name} now has {winner.chips} chips")
+            self.pot = 0
+            self.current_round = "showdown"
+            return {
+                "results": {},
+                "winning_bitstring": "",
+                "decoded_cards": {},
+                "total_shots": 0,
+                "has_errors": False,
+                "winner_info": {
+                    "winners": [{
+                        "player_num": winner.number,
+                        "player_name": winner.name,
+                        "hand_name": "Winner by Default",
+                        "kickers": [],
+                        "best_cards": []
+                    }],
+                    "all_hands": {}
+                }
+            }
 
         # Measure all cards
         self.qc_manager.measure_all_cards()
