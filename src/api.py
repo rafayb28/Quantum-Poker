@@ -643,11 +643,10 @@ async def perform_quantum_action(
             if request.bit_index < 0 or request.bit_index > 2:
                 raise HTTPException(status_code=400, detail="Invalid bit index. Only rank bits 0-2 allowed")
             
-            # Perform entanglement
-            source_id = f"P{player_number}H{request.source_card_idx + 1}"
-            game.qc_manager.entangle_cards(source_id, request.target_card_id, request.bit_index)
-            player.use_quantum_chip()
+            # Perform entanglement through game.entangle_cards() which records history
+            game.entangle_cards(player, request.source_card_idx, request.target_card_id, request.bit_index)
             
+            source_id = f"P{player_number}H{request.source_card_idx + 1}"
             bit_effects = ["±1", "±2", "±4"]
             
             # Broadcast quantum action to all players

@@ -41,30 +41,29 @@ export default function Card({ card, className = '', isEntangled = false }: Card
     <div 
       className={`
         relative bg-white rounded-lg shadow-lg
-        w-16 h-24 sm:w-20 sm:h-32 lg:w-24 lg:h-36
         flex flex-col items-center justify-center
         border-2 border-gray-300
         transition-all duration-200
         hover:scale-105 hover:shadow-xl
         ${isEntangled ? 'ring-2 ring-purple-500 ring-offset-2 animate-pulse' : ''}
-        ${className}
+        ${className || 'w-16 h-24 sm:w-20 sm:h-32'}
       `}
     >
       {/* Top corner */}
-      <div className={`absolute top-1 left-1 flex flex-col items-center ${suitColor}`}>
-        <span className="text-sm sm:text-base lg:text-lg font-bold leading-none">{rankDisplay}</span>
-        <span className="text-xs sm:text-sm lg:text-base leading-none">{suitSymbol}</span>
+      <div className={`absolute top-0.5 left-0.5 flex flex-col items-center ${suitColor}`}>
+        <span className="text-[10px] sm:text-xs font-bold leading-tight">{rankDisplay}</span>
+        <span className="text-[8px] sm:text-[10px] leading-tight">{suitSymbol}</span>
       </div>
       
       {/* Center symbol */}
-      <div className={`text-3xl sm:text-4xl lg:text-5xl ${suitColor}`}>
+      <div className={`text-xl sm:text-2xl lg:text-3xl ${suitColor}`}>
         {suitSymbol}
       </div>
       
       {/* Bottom corner (inverted) */}
-      <div className={`absolute bottom-1 right-1 flex flex-col items-center rotate-180 ${suitColor}`}>
-        <span className="text-sm sm:text-base lg:text-lg font-bold leading-none">{rankDisplay}</span>
-        <span className="text-xs sm:text-sm lg:text-base leading-none">{suitSymbol}</span>
+      <div className={`absolute bottom-0.5 right-0.5 flex flex-col items-center rotate-180 ${suitColor}`}>
+        <span className="text-[10px] sm:text-xs font-bold leading-tight">{rankDisplay}</span>
+        <span className="text-[8px] sm:text-[10px] leading-tight">{suitSymbol}</span>
       </div>
       
       {/* Quantum entanglement effect */}

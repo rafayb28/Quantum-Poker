@@ -10,11 +10,10 @@ export default function CardBack({ className = '' }: CardBackProps) {
       className={`
         relative bg-gradient-to-br from-blue-600 to-blue-800
         rounded-lg shadow-lg
-        w-16 h-24 sm:w-20 sm:h-32 lg:w-24 lg:h-36
         flex items-center justify-center
         border-2 border-blue-900
         transition-all duration-200
-        ${className}
+        ${className || 'w-16 h-24 sm:w-20 sm:h-32'}
       `}
     >
       {/* Card back pattern */}

@@ -273,11 +273,22 @@ class QuantumPoker:
         # Get source card identifier
         source_card_id = f"P{player.number}H{source_card_idx + 1}"
 
+        # Check if target is an opponent's card (costs 2 chips instead of 1)
+        is_opponent_card = target_card_id.startswith("P") and target_card_id.startswith("P") and not target_card_id.startswith(f"P{player.number}H")
+        chip_cost = 2 if is_opponent_card else 1
+        
+        if player.quantum_chips < chip_cost:
+            chips_needed = chip_cost - player.quantum_chips
+            raise ValueError(
+                f"Not enough quantum chips. Entangling opponent cards costs 2 chips "
+                f"(you need {chips_needed} more chip{'s' if chips_needed > 1 else ''})"
+            )
+
         # Perform entanglement
         self.qc_manager.entangle_cards(source_card_id, target_card_id, bit_index)
 
-        # Deduct quantum chip
-        player.quantum_chips -= 1
+        # Deduct quantum chips
+        player.quantum_chips -= chip_cost
         
         # Record entanglement in player's history
         bit_effect = ["±1", "±2", "±4"][bit_index]
@@ -288,9 +299,10 @@ class QuantumPoker:
             "effect": bit_effect
         })
 
+        cost_msg = f" (cost: {chip_cost} chip{'s' if chip_cost > 1 else ''})" if is_opponent_card else ""
         print(
             f"{player.name} entangled {source_card_id} with {target_card_id} "
-            f"(bit {bit_index}: {bit_effect} rank change)"
+            f"(bit {bit_index}: {bit_effect} rank change){cost_msg}"
         )
     
     def is_betting_round_complete(self) -> bool:

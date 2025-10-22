@@ -30,6 +30,11 @@ export default function QuantumEntangle({
   const [bitIndex, setBitIndex] = useState<number>(0);
   const [expandedOpponents, setExpandedOpponents] = useState<Set<number>>(new Set());
 
+  // Calculate cost based on target
+  const isOpponentCard = targetCardId?.startsWith('P') && !targetCardId.startsWith(`P${myPlayerNumber}H`);
+  const chipCost = isOpponentCard ? 2 : 1;
+  const hasEnoughChips = availableQuantumChips >= chipCost;
+
   const handleSourceSelect = (index: number) => {
     setSourceCard(index);
     // Clear target if it was the same card
@@ -174,6 +179,9 @@ export default function QuantumEntangle({
                     <span className="font-medium">
                       {opponent.name || `Player ${opponent.number}`}'s Cards
                     </span>
+                    <span className="ml-2 text-xs bg-orange-600 text-white px-2 py-0.5 rounded">
+                      Costs 2 chips
+                    </span>
                     {hasSelectedCard && (
                       <span className="ml-2 text-xs bg-green-600 text-white px-2 py-0.5 rounded">
                         Selected
@@ -266,11 +274,28 @@ export default function QuantumEntangle({
                 <li>Choose which rank bit to entangle (0, 1, or 2)</li>
                 <li>Creates quantum superposition between the selected bits</li>
                 <li>Cards collapse to actual values at showdown</li>
-                <li>Costs 1 quantum chip per entanglement</li>
+                <li><strong className="text-purple-400">Your/Community cards: 1 chip</strong></li>
+                <li><strong className="text-orange-400">Opponent cards: 2 chips</strong> (more expensive)</li>
               </ul>
             </div>
           </div>
         </div>
+
+        {/* Cost Display */}
+        {targetCardId && (
+          <div className={`mb-4 p-3 rounded-lg text-center font-semibold ${
+            isOpponentCard 
+              ? 'bg-orange-900/30 border border-orange-500 text-orange-300'
+              : 'bg-purple-900/30 border border-purple-500 text-purple-300'
+          }`}>
+            Cost: {chipCost} Quantum Chip{chipCost > 1 ? 's' : ''}
+            {!hasEnoughChips && (
+              <span className="ml-2 text-red-400 text-sm">
+                (Not enough chips!)
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4">
@@ -282,15 +307,15 @@ export default function QuantumEntangle({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={sourceCard === null || targetCardId === null || availableQuantumChips === 0}
+            disabled={sourceCard === null || targetCardId === null || !hasEnoughChips}
             className={`flex-1 px-6 py-3 font-semibold rounded-lg transition-all flex items-center justify-center ${
-              sourceCard !== null && targetCardId !== null && availableQuantumChips > 0
+              sourceCard !== null && targetCardId !== null && hasEnoughChips
                 ? 'bg-purple-600 hover:bg-purple-500 text-white hover:shadow-lg hover:shadow-purple-500/50'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
           >
             <Zap className="mr-2" size={20} />
-            Entangle Cards
+            Entangle Cards ({chipCost} chip{chipCost > 1 ? 's' : ''})
           </button>
         </div>
       </div>

@@ -129,8 +129,27 @@ export default function GamePage() {
   // Count players who have actually joined (have a name)
   const playersJoined = players?.filter(p => p.name && p.name.trim() !== '').length || 0;
 
+  // Helper function to convert card IDs to readable names
+  const formatCardId = (cardId: string): string => {
+    // Format: P1H1, P2H2, COM1, etc.
+    if (cardId.startsWith('P') && cardId.includes('H')) {
+      // Player hand card: P2H1 -> "Player 2's Card 1"
+      const playerNum = cardId.match(/P(\d+)/)?.[1];
+      const cardNum = cardId.match(/H(\d+)/)?.[1];
+      const player = players?.find(p => p.number === parseInt(playerNum || '0'));
+      const playerName = player?.name || `Player ${playerNum}`;
+      return `${playerName}'s Card ${cardNum}`;
+    } else if (cardId.startsWith('COM')) {
+      // Community card: COM1 -> "Community Card 1"
+      const cardNum = cardId.match(/COM(\d+)/)?.[1];
+      return `Community Card ${cardNum}`;
+    }
+    return cardId; // Fallback to original ID
+  };
+
   // Debug logging
   console.log('Debug - myPlayerNumber:', myPlayerNumber, 'isHost:', isHost, 'playersJoined:', playersJoined, 'round:', round);
+  console.log('Debug - myPlayer entanglement_history:', myPlayer?.entanglement_history);
 
   const copyGameCode = () => {
     navigator.clipboard.writeText(gameId);
@@ -358,11 +377,11 @@ export default function GamePage() {
                   <div className="space-y-2">
                     {myPlayer.entanglement_history.map((ent, idx) => (
                       <div key={idx} className="bg-gray-800 rounded-lg p-3 border border-purple-900">
-                        <div className="text-purple-300 font-medium mb-1">
-                          {ent.source} ↔ {ent.target}
+                        <div className="text-purple-300 font-medium mb-1 text-sm">
+                          🔗 {formatCardId(ent.source)} ↔ {formatCardId(ent.target)}
                         </div>
                         <div className="text-gray-400 text-xs">
-                          Bit {ent.bit}: {ent.effect} rank change
+                          {ent.effect} rank change (Bit {ent.bit})
                         </div>
                       </div>
                     ))}

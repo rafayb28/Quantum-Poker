@@ -47,7 +47,7 @@ export default function PlayerSeat({
     >
       <div 
         className={`
-          bg-gray-900 rounded-xl p-3 sm:p-4 min-w-[200px]
+          bg-gray-900 rounded-xl p-2 sm:p-3 w-[110px] sm:w-[130px]
           border-2 transition-all duration-300
           ${isCurrentPlayer ? 'border-yellow-500 ring-4 ring-yellow-500/50 scale-105' : 'border-gray-700'}
           ${player.folded ? 'opacity-50 grayscale' : ''}
@@ -56,16 +56,16 @@ export default function PlayerSeat({
       >
         {/* Player Info */}
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <p className="text-white font-semibold text-sm">
+          <div className="flex items-center gap-1">
+            <p className="text-white font-semibold text-xs truncate max-w-[70px]">
               {player.name}
               {isMe && <span className="text-blue-400 ml-1">(You)</span>}
             </p>
           </div>
           
           {player.quantum_chips > 0 && (
-            <div className="flex items-center gap-1 text-purple-400 text-xs">
-              <Zap size={14} />
+            <div className="flex items-center gap-1 text-purple-400 text-xs flex-shrink-0">
+              <Zap size={12} />
               <span>{player.quantum_chips}</span>
             </div>
           )}
@@ -90,20 +90,22 @@ export default function PlayerSeat({
         )}
         
         {/* Cards */}
-        <div className="flex gap-2 mt-2 justify-center">
+        <div className="flex gap-1 mt-2 justify-center">
           {player.hand && player.hand.length > 0 ? (
             player.hand.map((card, idx) => (
-              <Card key={idx} card={card} className="w-12 h-18 sm:w-14 sm:h-20" />
+              <div key={idx} className="w-12 h-16 text-[8px]">
+                <Card card={card} className="w-12 h-16 text-[8px]" />
+              </div>
             ))
           ) : isMe ? (
             <>
-              <CardBack className="w-12 h-18 sm:w-14 sm:h-20" />
-              <CardBack className="w-12 h-18 sm:w-14 sm:h-20" />
+              <CardBack className="w-12 h-16" />
+              <CardBack className="w-12 h-16" />
             </>
           ) : (
             <>
-              <CardBack className="w-12 h-18 sm:w-14 sm:h-20" />
-              <CardBack className="w-12 h-18 sm:w-14 sm:h-20" />
+              <CardBack className="w-12 h-16" />
+              <CardBack className="w-12 h-16" />
             </>
           )}
         </div>
