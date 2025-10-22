@@ -294,6 +294,7 @@ class QuantumPoker:
         # Check if only one player hasn't folded
         active_players = [p for p in self.players if not p.folded and p.name and p.name.strip()]
         if len(active_players) <= 1:
+            print(f"[Betting] Only {len(active_players)} active player(s) remaining - round complete!")
             return True
         
         # Check if all active non-all-in players have matched the current bet
@@ -381,7 +382,9 @@ class QuantumPoker:
         self.betting_round_active = False
         
         # Check for single winner (everyone else folded)
-        active_players = [p for p in self.players if not p.folded]
+        # Only count players who have actually joined the game
+        active_players = [p for p in self.players if not p.folded and p.name and p.name.strip()]
+        print(f"[Auto Progress] Active players: {len(active_players)} ({[p.name for p in active_players]})")
         if len(active_players) == 1:
             winner = active_players[0]
             pot_amount = self.pot
