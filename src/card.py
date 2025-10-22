@@ -57,4 +57,4 @@ class Card:
         bits = self.to_bits()
         for i in range(6):
             if (bits >> i) & 1:
-                qc.x(start_idx + i)
+                qc.x(qc.qubits[start_idx + i])
