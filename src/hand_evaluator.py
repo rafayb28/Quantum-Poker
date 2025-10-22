@@ -41,6 +41,15 @@ RANK_VALUES = {
 }
 
 
+# Suit rankings for tie-breaking (Spades highest, Clubs lowest)
+SUIT_VALUES = {
+    "Spades": 4,
+    "Hearts": 3,
+    "Diamonds": 2,
+    "Clubs": 1,
+}
+
+
 class HandEvaluator:
     """Evaluates poker hands and determines winners."""
 
@@ -167,15 +176,24 @@ class HandEvaluator:
 
     @staticmethod
     def compare_hands(
-        hand1: Tuple[str, List[int]], hand2: Tuple[str, List[int]]
+        hand1: Tuple[str, List[int]], 
+        hand2: Tuple[str, List[int]],
+        hand1_cards: List[Card] = None,
+        hand2_cards: List[Card] = None
     ) -> int:
         """
         Compare two hands.
 
+        Args:
+            hand1: Tuple of (hand_name, kickers) for first hand
+            hand2: Tuple of (hand_name, kickers) for second hand  
+            hand1_cards: Optional list of Card objects for hand1 (for suit tie-breaking)
+            hand2_cards: Optional list of Card objects for hand2 (for suit tie-breaking)
+
         Returns:
             1 if hand1 wins
             -1 if hand2 wins
-            0 if tie
+            0 if tie (after suit comparison if applicable)
         """
         rank1 = HAND_RANKINGS[hand1[0]]
         rank2 = HAND_RANKINGS[hand2[0]]
@@ -195,7 +213,33 @@ class HandEvaluator:
                 elif k1 < k2:
                     return -1
 
-            return 0  # Perfect tie
+            # Perfect kicker tie - use suit tie-breaking if cards provided
+            if hand1_cards and hand2_cards:
+                # Compare highest card suits (Spades > Hearts > Diamonds > Clubs)
+                # Sort cards by rank descending
+                cards1_sorted = sorted(hand1_cards, key=lambda c: RANK_VALUES[c.rank], reverse=True)
+                cards2_sorted = sorted(hand2_cards, key=lambda c: RANK_VALUES[c.rank], reverse=True)
+                
+                for c1, c2 in zip(cards1_sorted, cards2_sorted):
+                    rank_val1 = RANK_VALUES[c1.rank]
+                    rank_val2 = RANK_VALUES[c2.rank]
+                    
+                    # If same rank, compare suits
+                    if rank_val1 == rank_val2:
+                        suit_val1 = SUIT_VALUES[c1.suit]
+                        suit_val2 = SUIT_VALUES[c2.suit]
+                        if suit_val1 > suit_val2:
+                            return 1
+                        elif suit_val1 < suit_val2:
+                            return -1
+                        # Same suit and rank, check next card
+                    # Different ranks shouldn't happen if kickers matched, but handle it
+                    elif rank_val1 > rank_val2:
+                        return 1
+                    elif rank_val1 < rank_val2:
+                        return -1
+
+            return 0  # Perfect tie (even after suit comparison)
 
     @staticmethod
     def get_best_hand(

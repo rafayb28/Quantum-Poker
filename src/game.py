@@ -302,6 +302,7 @@ class QuantumPoker:
         
         # If everyone is all-in, betting is complete
         if not players_who_can_act:
+            print(f"[Betting] All {len(active_players)} active players are all-in - auto-progressing!")
             return True
         
         # Check if all players who can act have:
@@ -856,25 +857,30 @@ class QuantumPoker:
             if not player_hands:
                 return None
             
-            # Find winner(s)
+            # Find winner(s) with suit-based tie-breaking
             best_hand = None
+            best_hand_cards = None
             winners = []
             
             for player_num, hand_info in player_hands.items():
                 if best_hand is None:
                     best_hand = (hand_info["hand_name"], hand_info["kickers"])
+                    best_hand_cards = hand_info["best_cards"]
                     winners = [hand_info]
                 else:
                     comparison = HandEvaluator.compare_hands(
                         (hand_info["hand_name"], hand_info["kickers"]),
-                        best_hand
+                        best_hand,
+                        hand_info["best_cards"],
+                        best_hand_cards
                     )
                     if comparison > 0:
                         # New winner
                         best_hand = (hand_info["hand_name"], hand_info["kickers"])
+                        best_hand_cards = hand_info["best_cards"]
                         winners = [hand_info]
                     elif comparison == 0:
-                        # Tie
+                        # Tie (even after suit comparison)
                         winners.append(hand_info)
             
             return {
@@ -946,25 +952,30 @@ class QuantumPoker:
             if not player_hands:
                 return None
             
-            # Find winner(s)
+            # Find winner(s) with suit-based tie-breaking
             best_hand = None
+            best_hand_cards = None
             winners = []
             
             for player_num, hand_info in player_hands.items():
                 if best_hand is None:
                     best_hand = (hand_info["hand_name"], hand_info["kickers"])
+                    best_hand_cards = hand_info["best_cards"]
                     winners = [hand_info]
                 else:
                     comparison = HandEvaluator.compare_hands(
                         (hand_info["hand_name"], hand_info["kickers"]),
-                        best_hand
+                        best_hand,
+                        hand_info["best_cards"],
+                        best_hand_cards
                     )
                     if comparison > 0:
                         # New winner
                         best_hand = (hand_info["hand_name"], hand_info["kickers"])
+                        best_hand_cards = hand_info["best_cards"]
                         winners = [hand_info]
                     elif comparison == 0:
-                        # Tie
+                        # Tie (even after suit comparison)
                         winners.append(hand_info)
             
             return {

@@ -613,6 +613,10 @@ async def perform_quantum_action(
     
     player = game.players[player_number - 1]
     
+    # Check if it's this player's turn
+    if game.current_player_idx != player_number - 1:
+        raise HTTPException(status_code=400, detail="Not your turn - quantum actions only allowed on your turn")
+    
     try:
         if request.action == QuantumActionType.ENTANGLE:
             # Validate quantum chips
