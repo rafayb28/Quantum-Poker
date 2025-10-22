@@ -535,6 +535,22 @@ async def perform_action(
         elif action_type == "raise":
             if not request.amount:
                 raise HTTPException(status_code=400, detail="Raise amount required")
+            
+            # Validate raise amount is higher than current bet
+            if request.amount <= game.current_bet:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Raise amount must be higher than current bet of {game.current_bet}"
+                )
+            
+            # Validate player has enough chips for the raise
+            amount_needed = request.amount - player.current_bet
+            if amount_needed > player.chips:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Not enough chips. Need {amount_needed}, have {player.chips}"
+                )
+            
             actual_bet = player.raise_bet(game.current_bet, request.amount)
             game.pot += actual_bet
             game.current_bet = player.current_bet

@@ -277,7 +277,7 @@ export default function GamePage() {
                     currentBet={current_bet || 0}
                     myChips={myPlayer.chips}
                     myCurrentBet={myPlayer.current_bet}
-                    minRaise={(current_bet || 0) * 2}
+                    minRaise={(current_bet || 0) + 10}
                     onAction={handleAction}
                     disabled={!isConnected}
                   />
