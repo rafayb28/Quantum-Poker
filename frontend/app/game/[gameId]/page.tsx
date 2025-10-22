@@ -270,7 +270,7 @@ export default function GamePage() {
             
             <div className="space-y-6">
               {/* Betting Controls */}
-              {myPlayer && round !== 'showdown' && (
+              {myPlayer && round !== 'showdown' && round !== 'complete' && (
                 <>
                   <BettingControls
                     isMyTurn={isMyTurn}
@@ -296,8 +296,8 @@ export default function GamePage() {
                 </>
               )}
               
-              {/* Next Hand Button (Showdown) */}
-              {round === 'showdown' && isHost && (
+              {/* Next Hand Button (Showdown or Complete) */}
+              {(round === 'showdown' || round === 'complete') && isHost && (
                 <button
                   onClick={handleNextHand}
                   disabled={!isConnected}

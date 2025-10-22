@@ -101,14 +101,14 @@ class QuantumPoker:
 
     def start_next_hand(self):
         """
-        Start a new hand after showdown.
+        Start a new hand after showdown or complete.
         - Eliminates players with 0 chips
         - Rotates dealer position
         - Resets game state for new hand
         - Deals new cards
         """
-        if self.current_round != "showdown":
-            raise ValueError("Can only start next hand after showdown")
+        if self.current_round not in ["showdown", "complete"]:
+            raise ValueError("Can only start next hand after showdown or complete")
         
         # Remove players with no chips left
         self.players = [p for p in self.players if p.chips > 0]
