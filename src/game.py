@@ -901,7 +901,10 @@ class QuantumPoker:
         Award pot to winner(s) using side pot logic for all-in scenarios.
         """
         if not winners:
+            print("⚠️ No winners to award pot to!")
             return
+        
+        print(f"\n💰 Awarding pot of {self.pot} chips to {len(winners)} winner(s)")
         
         # Check if any players are all-in (need side pots)
         has_all_in = any(p.all_in for p in self.players if not p.folded)
@@ -911,13 +914,18 @@ class QuantumPoker:
             pot_share = self.pot // len(winners)
             remainder = self.pot % len(winners)
             
+            print(f"Simple pot split: {pot_share} chips each (no all-ins)")
+            
             for i, winner in enumerate(winners):
                 player = next(p for p in self.players if p.number == winner["player_num"])
                 # Give remainder to first winner(s) in position order
                 extra = 1 if i < remainder else 0
-                player.chips += pot_share + extra
+                total_award = pot_share + extra
+                player.chips += total_award
+                print(f"  {player.name} (Player {player.number}): +{total_award} chips (now has {player.chips})")
             
             self.pot = 0
+            print(f"Pot is now: {self.pot}")
         else:
             # Complex case: use side pot manager
             side_pot_mgr = SidePotManager()

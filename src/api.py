@@ -452,6 +452,10 @@ async def perform_action(
     session = session_manager.get_session(token)
     player_number = session.player_number
     
+    # Check if game is in a state where actions are allowed
+    if game.current_round in ["showdown", "complete"]:
+        raise HTTPException(status_code=400, detail=f"Cannot perform actions during {game.current_round}")
+    
     if player_number < 1 or player_number > game.num_players:
         raise HTTPException(status_code=400, detail="Invalid player number")
     
