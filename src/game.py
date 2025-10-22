@@ -786,11 +786,20 @@ class QuantumPoker:
                         "player_name": w["player"].name,
                         "hand_name": w["hand_name"],
                         "kickers": w["kickers"],
-                        "best_cards": w["best_cards"]
+                        "best_cards": [{"suit": c.suit, "rank": c.rank} for c in w["best_cards"]]
                     }
                     for w in winners
                 ],
-                "all_hands": player_hands
+                "all_hands": {
+                    player_num: {
+                        "hand_name": hand_info["hand_name"],
+                        "kickers": hand_info["kickers"],
+                        "best_cards": [{"suit": c.suit, "rank": c.rank} for c in hand_info["best_cards"]],
+                        "player_name": hand_info["player"].name,
+                        "player_num": player_num
+                    }
+                    for player_num, hand_info in player_hands.items()
+                }
             }
             
         except Exception as e:
@@ -867,11 +876,20 @@ class QuantumPoker:
                         "player_name": w["player"].name,
                         "hand_name": w["hand_name"],
                         "kickers": w["kickers"],
-                        "best_cards": w["best_cards"]
+                        "best_cards": [{"suit": c.suit, "rank": c.rank} for c in w["best_cards"]]
                     }
                     for w in winners
                 ],
-                "all_hands": player_hands
+                "all_hands": {
+                    player_num: {
+                        "hand_name": hand_info["hand_name"],
+                        "kickers": hand_info["kickers"],
+                        "best_cards": [{"suit": c.suit, "rank": c.rank} for c in hand_info["best_cards"]],
+                        "player_name": hand_info["player"].name,
+                        "player_num": player_num
+                    }
+                    for player_num, hand_info in player_hands.items()
+                }
             }
             
         except Exception as e:
