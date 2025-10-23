@@ -253,6 +253,10 @@ class QuantumPokerCircuit:
         }
 
         for card1, card2, bit_idx, _ in self.entanglement_history:
+            # Skip SELF and PHASE operations - they're not entanglements between cards
+            if card2 in ["SELF", "PHASE"]:
+                continue
+            
             graph[card1].append((card2, bit_idx))
             graph[card2].append((card1, bit_idx))
 
