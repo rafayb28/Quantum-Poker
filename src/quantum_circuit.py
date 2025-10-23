@@ -2,14 +2,17 @@
 Global Quantum Circuit Manager for Quantum Poker
 
 This module manages the global quantum circuit that contains all card registers
-and ancilla bits needed for quantum operations during the game.
+needed for quantum operations during the game.
 """
 
 import qiskit
-from qiskit.circuit import AncillaRegister, QuantumRegister, ClassicalRegister
+from qiskit.circuit import QuantumRegister, ClassicalRegister
 from typing import Dict, List, Tuple
 
-from .card import Card
+from .card import Card, SUITS, RANKS
+
+SUITS_INVERSE = {v: k for k, v in SUITS.items()}
+RANKS_INVERSE = {v: k for k, v in RANKS.items()}
 
 
 class QuantumPokerCircuit:
@@ -26,17 +29,12 @@ class QuantumPokerCircuit:
         # e.g., "P1H1" -> (QuantumRegister, 0, 6) for Player 1 Hole Card 1
         self.card_register_map: Dict[str, Tuple[QuantumRegister, int, int]] = {}
 
-        # Ancilla identifier -> (register, index) mapping
-        # e.g., "A0" -> (AncillaRegister, 0)
-        self.ancilla_register_map: Dict[str, Tuple[AncillaRegister, int]] = {}
-
         # Track which cards have been added
         self.registered_cards: List[str] = []
 
         # Entanglement history: [(card1_id, card2_id, bit_index, operation_type)]
         self.entanglement_history: List[Tuple[str, str, int, str]] = []
 
-        # Classical register for measurements (added at showdown)
         self.classical_register = None
 
     def add_card(self, card: Card, identifier: str) -> QuantumRegister:
@@ -48,50 +46,24 @@ class QuantumPokerCircuit:
             identifier: Unique identifier (e.g., "P1H1", "F0", "T", "R")
 
         Returns:
-            The quantum register slice for this card
+            The quantum register for this card
         """
         if identifier in self.card_register_map:
             raise ValueError(f"Card identifier {identifier} already exists")
 
-        # Create a 6-qubit register for this card
-        register = QuantumRegister(6, name=identifier)
-        self.circuit.add_register(register)
+        # Create register, add to circuit, and prepare
+        card.register = QuantumRegister(6, name=identifier)
+        self.circuit.add_register(card.register)
+        card.set_identifier(identifier)
+        card.prepare(self.circuit)
 
         # Store mapping
         start_idx = len(self.circuit.qubits) - 6
         end_idx = len(self.circuit.qubits)
-        self.card_register_map[identifier] = (register, start_idx, end_idx)
+        self.card_register_map[identifier] = (card.register, start_idx, end_idx)
         self.registered_cards.append(identifier)
 
-        # Update card object
-        card.set_identifier(identifier)
-        card.register = register
-
-        # Prepare the card state
-        card.prepare(self.circuit, start_idx)
-
-        return register
-
-    def add_ancilla(self, identifier: str):
-        """
-        Add an ancilla qubit for quantum operations.
-
-        Args:
-            identifier: Unique identifier (e.g., "A0", "A1")
-
-        Returns:
-            The ancilla qubit
-        """
-        if identifier in self.ancilla_register_map:
-            raise ValueError(f"Ancilla identifier {identifier} already exists")
-
-        ancilla = AncillaRegister(1, name=identifier)
-        self.circuit.add_register(ancilla)
-
-        idx = len(self.circuit.qubits) - 1
-        self.ancilla_register_map[identifier] = (ancilla, idx)
-
-        return ancilla[0]
+        return card.register
 
     def entangle_cards(
         self, card1_id: str, card2_id: str, bit_index: int, option: int = 1
@@ -145,14 +117,14 @@ class QuantumPokerCircuit:
     def apply_hadamard(self, card_id: str, bit_index: int):
         """
         Apply Hadamard gate to a specific bit of a card to put it in superposition.
-        
+
         Args:
             card_id: Identifier of the card
             bit_index: Which rank bit to put in superposition (0-2 only)
         """
         if card_id not in self.card_register_map:
             raise ValueError(f"Card {card_id} not found in circuit")
-        
+
         if bit_index < 0 or bit_index > 2:
             raise ValueError(
                 f"Invalid bit index: {bit_index}. Must be 0-2 (rank bits only).\n"
@@ -160,26 +132,26 @@ class QuantumPokerCircuit:
                 f"  Bit 1: ±2 rank change\n"
                 f"  Bit 2: ±4 rank change"
             )
-        
+
         reg, start, _ = self.card_register_map[card_id]
-        
+
         # Apply Hadamard to create superposition
         self.circuit.h(reg[bit_index])
-        
+
         # Record in history as self-superposition
         self.entanglement_history.append((card_id, "SELF", bit_index, "H"))
 
     def apply_phase(self, card_id: str, bit_index: int):
         """
         Apply Phase (Z) gate to a specific bit of a card to create interference.
-        
+
         Args:
             card_id: Identifier of the card
             bit_index: Which rank bit to apply phase to (0-2 only)
         """
         if card_id not in self.card_register_map:
             raise ValueError(f"Card {card_id} not found in circuit")
-        
+
         if bit_index < 0 or bit_index > 2:
             raise ValueError(
                 f"Invalid bit index: {bit_index}. Must be 0-2 (rank bits only).\n"
@@ -187,53 +159,45 @@ class QuantumPokerCircuit:
                 f"  Bit 1: ±2 rank change\n"
                 f"  Bit 2: ±4 rank change"
             )
-        
+
         reg, start, _ = self.card_register_map[card_id]
-        
+
         # Apply Z gate (phase flip)
         self.circuit.z(reg[bit_index])
-        
+
         # Record in history
         self.entanglement_history.append((card_id, "PHASE", bit_index, "Z"))
 
-    def prepare_measurement(self):
-        """
-        Add classical register for measurement at showdown.
-        Should be called before measuring cards.
-        """
-        if self.classical_register is None:
-            num_qubits = len(self.circuit.qubits)
-            self.classical_register = ClassicalRegister(num_qubits, "meas")
-            self.circuit.add_register(self.classical_register)
+    # def prepare_measurement(self):
+    #     """
+    #     Add classical register for measurement at showdown.
+    #     Should be called before measuring cards.
+    #     """
+    #     if self.classical_register is None:
+    #         num_qubits = len(self.circuit.qubits)
+    #         self.classical_register = ClassicalRegister(num_qubits, "meas")
+    #         self.circuit.add_register(self.classical_register)
 
-    def measure_card(self, card_id: str):
+    def measure_cards(self):
         """
         Measure a specific card's qubits.
 
         Args:
             card_id: Identifier of card to measure
         """
+        # Create one classical register sized to all qubits, only once
         if self.classical_register is None:
-            self.prepare_measurement()
+            num_qubits = len(self.circuit.qubits)
+            self.classical_register = ClassicalRegister(num_qubits, "meas")
+            self.circuit.add_register(self.classical_register)
 
-        if card_id not in self.card_register_map:
-            raise ValueError(f"Card {card_id} not found")
-
-        register, start_idx, end_idx = self.card_register_map[card_id]
-
-        # Measure all 6 qubits of the card
-        for i in range(6):
-            self.circuit.measure(register[i], self.classical_register[start_idx + i])
-
-    def measure_all_cards(self):
-        """
-        Measure all cards in the circuit (called at showdown).
-        """
-        if self.classical_register is None:
-            self.prepare_measurement()
-
-        for card_id in self.registered_cards:
-            self.measure_card(card_id)
+            # Wire up all measurements exactly once
+            for card_id in self.registered_cards:
+                register, start_idx, _ = self.card_register_map[card_id]
+                for i in range(6):
+                    self.circuit.measure(
+                        register[i], self.classical_register[start_idx + i]
+                    )
 
     def get_circuit_diagram(self) -> str:
         """
@@ -256,25 +220,47 @@ class QuantumPokerCircuit:
             # Skip SELF and PHASE operations - they're not entanglements between cards
             if card2 in ["SELF", "PHASE"]:
                 continue
-            
+
             graph[card1].append((card2, bit_idx))
             graph[card2].append((card1, bit_idx))
 
         return graph
 
+    def decode_card(self, card_id: str):
+        """
+        Decode a card after measurement, reading from the circuit's classical bitsring
+        """
+        bitstring = self._last_bitstring[0]
+        total_bits = len(bitstring)
+        _, start_idx, _ = self.card_register_map[card_id]
+
+        # Read one bit from the global classical bitstring
+        def read_bit(global_idx: int) -> int:
+            pos = total_bits - 1 - global_idx
+            return 1 if bitstring[pos] == "1" else 0
+
+        rank_val = 0
+        for i in range(4):
+            rank_val |= read_bit(start_idx + i) << i
+
+        suit_val = 0
+        for i in range(2):
+            suit_val |= read_bit(start_idx + 4 + i) << i
+
+        rank = RANKS_INVERSE.get(rank_val, None)
+        suit = SUITS_INVERSE.get(suit_val, None)
+
+        return rank, suit
+
     def simulate(
         self,
         shots: int = 1024,
-        filter_invalid: bool = True,
-        max_shots: int = 50000,
-        min_valid_ratio: float = 0.1,
     ) -> Dict:
         """
         Simulate the circuit and return measurement results.
 
         Args:
             shots: Number of simulation shots
-            filter_invalid: If True, only return valid card measurements
             max_shots: Maximum number of shots before giving up
             min_valid_ratio: Minimum ratio of valid shots (default 10%)
 
@@ -288,52 +274,8 @@ class QuantumPokerCircuit:
         result = job.result()
         counts = result.get_counts(self.circuit)
 
-        if filter_invalid:
-            # Filter out invalid measurements
-            valid_counts = {}
-            invalid_count = 0
-            for bitstring, count in counts.items():
-                if self._is_valid_measurement(bitstring):
-                    valid_counts[bitstring] = count
-                else:
-                    invalid_count += count
-
-            valid_total = sum(valid_counts.values())
-            valid_ratio = valid_total / shots if shots > 0 else 0
-
-            if valid_counts and valid_ratio >= min_valid_ratio:
-                # Show validation statistics
-                print(
-                    f"Validation: {valid_total} valid, {invalid_count} invalid out of {shots} shots ({100*valid_ratio:.1f}% valid)"
-                )
-                return valid_counts
-
-            # If not enough valid outcomes and we haven't hit max, try more shots
-            if shots < max_shots:
-                new_shots = min(shots * 3, max_shots)
-                print(
-                    f"Warning: Only {100*valid_ratio:.1f}% valid measurements ({valid_total}/{shots}). Increasing to {new_shots}..."
-                )
-                return self.simulate(
-                    shots=new_shots,
-                    filter_invalid=True,
-                    max_shots=max_shots,
-                    min_valid_ratio=min_valid_ratio,
-                )
-            else:
-                # If we have some valid measurements, use them even if below threshold
-                if valid_counts:
-                    print(
-                        f"Note: Using {valid_total} valid measurements out of {shots} ({100*valid_ratio:.1f}% valid)"
-                    )
-                    return valid_counts
-
-                # Give up and return best effort
-                print(
-                    f"ERROR: Could not find enough valid measurements after {shots} shots!"
-                )
-                print("Returning unfiltered results. Cards may have invalid values.")
-                return counts
+        self._last_counts = counts
+        self._last_bitstring = max(counts.items(), key=lambda kv: kv[1])
 
         return counts
 

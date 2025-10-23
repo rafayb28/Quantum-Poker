@@ -12,15 +12,12 @@ def prob_full_swap(qc, A, B, c, bit_indices=(0, 1, 2, 3)):
         qc.cswap(c, A[i], B[i])
 
 
-anc = qiskit.AncillaRegister(1, "anc")
-
-
-qc = qiskit.QuantumCircuit(A, B, anc)
+qc = qiskit.QuantumCircuit(A, B)
 
 qc.x(A[1])  # 0010
 qc.x(B[2])  # 0100
 
-prob_full_swap(qc, A, B, anc[0], bit_indices=(0, 1, 2, 3))
+prob_full_swap(qc, A, B, bit_indices=(0, 1, 2, 3))
 
 qc.measure_all()
 backend = Aer.get_backend("qasm_simulator")

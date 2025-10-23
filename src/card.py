@@ -49,7 +49,7 @@ class Card:
         rank_bits = RANKS[self.rank]
         return (suit_bits << 4) | rank_bits
 
-    def prepare(self, qc: qiskit.QuantumCircuit, start_idx: int):
+    def prepare(self, qc: qiskit.QuantumCircuit):
         """
         Called once the register has been added to the global
         circuit. Apply X gates to prepare the needed state
@@ -57,4 +57,4 @@ class Card:
         bits = self.to_bits()
         for i in range(6):
             if (bits >> i) & 1:
-                qc.x(qc.qubits[start_idx + i])
+                qc.x(self.register[i])
