@@ -23,7 +23,7 @@ import uuid
 from .game import QuantumPoker
 from .session_manager import get_session_manager, SessionManager
 
-app = FastAPI(title="Quantum Poker API", version="0.1.0")
+app = FastAPI(root_path="api", title="Quantum Poker API", version="0.1.0")
 
 # CORS for React frontend
 app.add_middleware(
