@@ -255,12 +255,12 @@ class QuantumPoker:
         self, player: Player, source_card_idx: int, target_card_id: str, bit_index: int
     ):
         """
-        Allow a player to entangle one of their cards with another card.
+        Allow a player to entangle one of their cards with another card, or put card in superposition/phase.
 
         Args:
             player: The player performing the entanglement
             source_card_idx: Index of player's hole card (0 or 1)
-            target_card_id: Identifier of target card (e.g., "F0", "P2H1")
+            target_card_id: Identifier of target card (e.g., "F0", "P2H1", "SELF" for superposition, "PHASE" for interference)
             bit_index: Which rank bit to entangle (0-2 only)
                       0 = ±1 rank, 1 = ±2 rank, 2 = ±4 rank
         """
@@ -280,6 +280,50 @@ class QuantumPoker:
 
         # Get source card identifier
         source_card_id = f"P{player.number}H{source_card_idx + 1}"
+
+        # Check for self-superposition (only costs 1 chip)
+        if target_card_id == "SELF":
+            # Put card in superposition without entangling to another card
+            self.qc_manager.apply_hadamard(source_card_id, bit_index)
+            player.quantum_chips -= 1
+            
+            bit_effect = ["±1", "±2", "±4"][bit_index]
+            player.entanglement_history.append(
+                {
+                    "source": source_card_id,
+                    "target": "SELF",
+                    "bit": bit_index,
+                    "effect": bit_effect,
+                }
+            )
+            
+            print(
+                f"{player.name} put {source_card_id} in superposition "
+                f"(bit {bit_index}: {bit_effect} rank change)"
+            )
+            return
+
+        # Check for phase/interference (only costs 1 chip)
+        if target_card_id == "PHASE":
+            # Apply phase gate for interference
+            self.qc_manager.apply_phase(source_card_id, bit_index)
+            player.quantum_chips -= 1
+            
+            bit_effect = ["±1", "±2", "±4"][bit_index]
+            player.entanglement_history.append(
+                {
+                    "source": source_card_id,
+                    "target": "PHASE",
+                    "bit": bit_index,
+                    "effect": bit_effect,
+                }
+            )
+            
+            print(
+                f"{player.name} applied phase gate to {source_card_id} "
+                f"(bit {bit_index}: interference effect)"
+            )
+            return
 
         # Check if target is an opponent's card (costs 2 chips instead of 1)
         is_opponent_card = (

@@ -32,6 +32,8 @@ export default function QuantumEntangle({
 
   // Calculate cost based on target
   const isOpponentCard = targetCardId?.startsWith('P') && !targetCardId.startsWith(`P${myPlayerNumber}H`);
+  const isSelfSuperposition = targetCardId === 'SELF';
+  const isPhaseInterference = targetCardId === 'PHASE';
   const chipCost = isOpponentCard ? 2 : 1;
   const hasEnoughChips = availableQuantumChips >= chipCost;
 
@@ -125,6 +127,59 @@ export default function QuantumEntangle({
             <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">2</span>
             Select Target Card
           </h3>
+          
+          {/* Self-Superposition Option */}
+          <div className="mb-6">
+            <h4 className="text-gray-400 text-sm mb-3">Your Cards</h4>
+            <button
+              onClick={() => handleTargetSelect('SELF')}
+              className={`w-full p-4 rounded-lg border-2 transition-all ${
+                targetCardId === 'SELF'
+                  ? 'border-blue-500 bg-blue-600/30'
+                  : 'border-gray-700 bg-gray-800/50 hover:border-blue-400'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">⚛️</span>
+                  <div className="text-left">
+                    <div className="text-white font-bold">Self (Superposition)</div>
+                    <div className="text-gray-400 text-xs">Put your card in superposition - costs 1 chip</div>
+                  </div>
+                </div>
+                {targetCardId === 'SELF' && (
+                  <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded">
+                    Selected
+                  </span>
+                )}
+              </div>
+            </button>
+            
+            {/* Phase Interference Option */}
+            <button
+              onClick={() => handleTargetSelect('PHASE')}
+              className={`w-full p-4 rounded-lg border-2 transition-all mt-3 ${
+                targetCardId === 'PHASE'
+                  ? 'border-blue-500 bg-blue-600/30'
+                  : 'border-gray-700 bg-gray-800/50 hover:border-blue-400'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">〰️</span>
+                  <div className="text-left">
+                    <div className="text-white font-bold">Phase (Interference)</div>
+                    <div className="text-gray-400 text-xs">Apply phase shift to create interference - costs 1 chip</div>
+                  </div>
+                </div>
+                {targetCardId === 'PHASE' && (
+                  <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded">
+                    Selected
+                  </span>
+                )}
+              </div>
+            </button>
+          </div>
           
           {/* Community Cards */}
           {communityCards.length > 0 && (

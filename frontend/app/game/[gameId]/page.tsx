@@ -131,6 +131,15 @@ export default function GamePage() {
 
   // Helper function to convert card IDs to readable names
   const formatCardId = (cardId: string): string => {
+    // Handle self-superposition
+    if (cardId === 'SELF') {
+      return 'Self (Superposition)';
+    }
+    
+    if (cardId === 'PHASE') {
+      return 'Phase (Interference)';
+    }
+    
     // Format: P1H1, P2H2, COM1, etc.
     if (cardId.startsWith('P') && cardId.includes('H')) {
       // Player hand card: P2H1 -> "Player 2's Card 1"
@@ -378,7 +387,13 @@ export default function GamePage() {
                     {myPlayer.entanglement_history.map((ent, idx) => (
                       <div key={idx} className="bg-gray-800 rounded-lg p-3 border border-purple-900">
                         <div className="text-purple-300 font-medium mb-1 text-sm">
-                          🔗 {formatCardId(ent.source)} ↔ {formatCardId(ent.target)}
+                          {ent.target === 'SELF' ? (
+                            <>⚛️ {formatCardId(ent.source)} → Superposition</>
+                          ) : ent.target === 'PHASE' ? (
+                            <>〰️ {formatCardId(ent.source)} → Phase Interference</>
+                          ) : (
+                            <>🔗 {formatCardId(ent.source)} ↔ {formatCardId(ent.target)}</>
+                          )}
                         </div>
                         <div className="text-gray-400 text-xs">
                           {ent.effect} rank change (Bit {ent.bit})

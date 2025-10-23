@@ -142,6 +142,60 @@ class QuantumPokerCircuit:
                 f"Entanglement option {option} not yet implemented"
             )
 
+    def apply_hadamard(self, card_id: str, bit_index: int):
+        """
+        Apply Hadamard gate to a specific bit of a card to put it in superposition.
+        
+        Args:
+            card_id: Identifier of the card
+            bit_index: Which rank bit to put in superposition (0-2 only)
+        """
+        if card_id not in self.card_register_map:
+            raise ValueError(f"Card {card_id} not found in circuit")
+        
+        if bit_index < 0 or bit_index > 2:
+            raise ValueError(
+                f"Invalid bit index: {bit_index}. Must be 0-2 (rank bits only).\n"
+                f"  Bit 0: ±1 rank change\n"
+                f"  Bit 1: ±2 rank change\n"
+                f"  Bit 2: ±4 rank change"
+            )
+        
+        reg, start, _ = self.card_register_map[card_id]
+        
+        # Apply Hadamard to create superposition
+        self.circuit.h(reg[bit_index])
+        
+        # Record in history as self-superposition
+        self.entanglement_history.append((card_id, "SELF", bit_index, "H"))
+
+    def apply_phase(self, card_id: str, bit_index: int):
+        """
+        Apply Phase (Z) gate to a specific bit of a card to create interference.
+        
+        Args:
+            card_id: Identifier of the card
+            bit_index: Which rank bit to apply phase to (0-2 only)
+        """
+        if card_id not in self.card_register_map:
+            raise ValueError(f"Card {card_id} not found in circuit")
+        
+        if bit_index < 0 or bit_index > 2:
+            raise ValueError(
+                f"Invalid bit index: {bit_index}. Must be 0-2 (rank bits only).\n"
+                f"  Bit 0: ±1 rank change\n"
+                f"  Bit 1: ±2 rank change\n"
+                f"  Bit 2: ±4 rank change"
+            )
+        
+        reg, start, _ = self.card_register_map[card_id]
+        
+        # Apply Z gate (phase flip)
+        self.circuit.z(reg[bit_index])
+        
+        # Record in history
+        self.entanglement_history.append((card_id, "PHASE", bit_index, "Z"))
+
     def prepare_measurement(self):
         """
         Add classical register for measurement at showdown.
