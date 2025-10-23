@@ -1,5 +1,5 @@
 class Player:
-    def __init__(self, name, number, starting_chips=1000, starting_quantum_chips=2):
+    def __init__(self, name, number, starting_chips=1000, starting_quantum_chips=3):
         self.name = name
         self.number = number
         self.hand = []
