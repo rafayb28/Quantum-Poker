@@ -12,6 +12,7 @@ interface PokerTableProps {
   pot: number;
   currentPlayer: number;
   myPlayerNumber: number;
+  currentRound?: string;
 }
 
 export default function PokerTable({
@@ -19,7 +20,8 @@ export default function PokerTable({
   communityCards,
   pot,
   currentPlayer,
-  myPlayerNumber
+  myPlayerNumber,
+  currentRound = ''
 }: PokerTableProps) {
   return (
     <div className="relative w-full h-full min-h-[600px] bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 rounded-3xl border-8 border-amber-900 shadow-2xl p-8">
@@ -49,6 +51,7 @@ export default function PokerTable({
             position={idx}
             isCurrentPlayer={currentPlayer - 1 === (player.number - 1)}
             isMe={player.number === myPlayerNumber}
+            currentRound={currentRound}
           />
         ))}
     </div>

@@ -11,6 +11,7 @@ interface PlayerSeatProps {
   position: number;
   isCurrentPlayer: boolean;
   isMe: boolean;
+  currentRound?: string;
   className?: string;
 }
 
@@ -19,6 +20,7 @@ export default function PlayerSeat({
   position,
   isCurrentPlayer,
   isMe,
+  currentRound = '',
   className = ''
 }: PlayerSeatProps) {
   const getPositionClasses = () => {
@@ -97,11 +99,6 @@ export default function PlayerSeat({
                 <Card card={card} className="w-12 h-16 text-[8px]" />
               </div>
             ))
-          ) : isMe ? (
-            <>
-              <CardBack className="w-12 h-16" />
-              <CardBack className="w-12 h-16" />
-            </>
           ) : (
             <>
               <CardBack className="w-12 h-16" />

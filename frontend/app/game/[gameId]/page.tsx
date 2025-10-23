@@ -294,6 +294,7 @@ export default function GamePage() {
                 pot={pot || 0}
                 currentPlayer={current_player || 0}
                 myPlayerNumber={myPlayerNumber || 1}
+                currentRound={round || ''}
               />
             </div>
             
