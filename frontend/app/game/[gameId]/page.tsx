@@ -310,7 +310,7 @@ export default function GamePage() {
                     disabled={!isConnected}
                   />
                   
-                  {/* Quantum Entangle Button */}
+                  {/* Quantum Operations Button */}
                   {myPlayer.quantum_chips > 0 && myPlayer.hand && myPlayer.hand.length === 2 && (
                     <button
                       onClick={() => setShowQuantumModal(true)}
@@ -318,7 +318,10 @@ export default function GamePage() {
                       className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                       <span className="text-xl">⚛️</span>
-                      <span>Quantum Entangle ({myPlayer.quantum_chips} chips)</span>
+                      <span>Quantum Operations</span>
+                      <span className="ml-2 text-xs bg-purple-500 px-2 py-0.5 rounded-full">
+                        {myPlayer.quantum_chips} available
+                      </span>
                     </button>
                   )}
                 </>
@@ -376,12 +379,15 @@ export default function GamePage() {
                 </div>
               </div>
               
-              {/* Entanglement History */}
+              {/* Quantum Operations History */}
               {myPlayer && myPlayer.entanglement_history && myPlayer.entanglement_history.length > 0 && (
                 <div className="bg-gray-900 rounded-xl p-4 border-2 border-purple-700">
                   <h3 className="text-purple-400 font-bold mb-3 flex items-center gap-2">
                     <span className="text-xl">⚛️</span>
-                    <span>Your Entanglements</span>
+                    <span>Quantum Operations</span>
+                    <span className="text-xs bg-purple-600/50 text-purple-200 px-2 py-0.5 rounded-full">
+                      {myPlayer.entanglement_history.length}
+                    </span>
                   </h3>
                   <div className="space-y-2">
                     {myPlayer.entanglement_history.map((ent, idx) => (

@@ -31,9 +31,9 @@ export default function QuantumEntangle({
   const [expandedOpponents, setExpandedOpponents] = useState<Set<number>>(new Set());
 
   // Calculate cost based on target
-  const isOpponentCard = targetCardId?.startsWith('P') && !targetCardId.startsWith(`P${myPlayerNumber}H`);
   const isSelfSuperposition = targetCardId === 'SELF';
   const isPhaseInterference = targetCardId === 'PHASE';
+  const isOpponentCard = targetCardId?.startsWith('P') && !targetCardId.startsWith(`P${myPlayerNumber}H`) && targetCardId !== 'PHASE';
   const chipCost = isOpponentCard ? 2 : 1;
   const hasEnoughChips = availableQuantumChips >= chipCost;
 
@@ -75,15 +75,18 @@ export default function QuantumEntangle({
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 rounded-xl p-8 max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-purple-500">
         <div className="text-center mb-6">
-          <div className="flex items-center justify-center mb-4">
-            <Zap className="text-purple-400 mr-2" size={32} />
-            <h2 className="text-3xl font-bold text-white">Quantum Entanglement</h2>
+          <div className="flex items-center justify-center mb-4 gap-2">
+            <Zap className="text-purple-400" size={32} />
+            <h2 className="text-3xl font-bold text-white">Quantum Operations</h2>
+            <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-full">
+              Superposition • Phase • Entanglement
+            </span>
           </div>
           <p className="text-gray-400 mb-2">
-            Select one of your cards, then select a target card to entangle with
+            Select one of your cards, then choose an operation
           </p>
           <p className="text-sm text-gray-500">
-            Creates quantum superposition between card rank bits
+            Manipulate quantum states to change your cards at showdown
           </p>
         </div>
 
@@ -370,7 +373,7 @@ export default function QuantumEntangle({
             }`}
           >
             <Zap className="mr-2" size={20} />
-            Entangle Cards ({chipCost} chip{chipCost > 1 ? 's' : ''})
+            Apply Operation ({chipCost} chip{chipCost > 1 ? 's' : ''})
           </button>
         </div>
       </div>
