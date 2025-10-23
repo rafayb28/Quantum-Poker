@@ -1282,7 +1282,11 @@ class QuantumPoker:
             + 1,  # Convert to 1-indexed to match player numbers
             "players": [
                 p.to_dict(
-                    reveal_cards=(viewing_player is None or p.number == viewing_player)
+                    reveal_cards=(
+                        viewing_player is None 
+                        or p.number == viewing_player
+                        or self.current_round == "showdown"  # Reveal all cards at showdown
+                    )
                 )
                 for p in self.players
             ],
