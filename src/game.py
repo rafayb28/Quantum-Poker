@@ -838,18 +838,28 @@ class QuantumPoker:
         # Measure all cards
         self.qc_manager.measure_all_cards()
 
-        # Run simulation without strict filtering (accept quantum measurement errors as part of gameplay)
-        print("Running quantum measurement simulation...")
-        results = self.qc_manager.simulate(shots=2048, filter_invalid=False)
+        # Check if any quantum operations were performed
+        has_quantum_operations = len(self.qc_manager.entanglement_history) > 0
 
-        # Get most common outcome
-        most_common = max(results.items(), key=lambda x: x[1])
-        winning_bitstring = most_common[0]
-        total_shots = sum(results.values())
+        if has_quantum_operations:
+            # Run simulation without strict filtering (accept quantum measurement errors as part of gameplay)
+            print("Running quantum measurement simulation...")
+            results = self.qc_manager.simulate(shots=2048, filter_invalid=False)
 
-        print(
-            f"Most common outcome: {most_common[1]} shots ({100*most_common[1]/total_shots:.1f}%)\n"
-        )
+            # Get most common outcome
+            most_common = max(results.items(), key=lambda x: x[1])
+            winning_bitstring = most_common[0]
+            total_shots = sum(results.values())
+
+            print(
+                f"Most common outcome: {most_common[1]} shots ({100*most_common[1]/total_shots:.1f}%)\n"
+            )
+        else:
+            # No quantum operations - skip simulation, cards remain as originally dealt
+            print("No quantum operations performed - cards remain unchanged\n")
+            winning_bitstring = None
+            results = {}
+            total_shots = 0
 
         # Decode all cards
         decoded_cards = {}
@@ -865,40 +875,63 @@ class QuantumPoker:
         replacements = []
 
         for card_id in self.qc_manager.registered_cards:
-            rank, suit = self.qc_manager.decode_measurement(winning_bitstring, card_id)
+            if has_quantum_operations:
+                # Decode from quantum measurement
+                rank, suit = self.qc_manager.decode_measurement(winning_bitstring, card_id)
 
-            # If measurement is out of bounds, replace with the next card in the deck
-            if rank is None or suit is None:
-                has_invalid = True
-                # draw replacement card (wrap if needed, though normal decks will have plenty left)
-                if self.deck_index >= len(self.deck):
-                    self.deck_index = 0
-                replacement = self.deck[self.deck_index]
-                self.deck_index += 1
-                # adopt replacement card's classical values
-                rank, suit = replacement.rank, replacement.suit
-                replacements.append((card_id, f"{rank} of {suit}"))
+                # If measurement is out of bounds, replace with the next card in the deck
+                if rank is None or suit is None:
+                    has_invalid = True
+                    # draw replacement card (wrap if needed, though normal decks will have plenty left)
+                    if self.deck_index >= len(self.deck):
+                        self.deck_index = 0
+                    replacement = self.deck[self.deck_index]
+                    self.deck_index += 1
+                    # adopt replacement card's classical values
+                    rank, suit = replacement.rank, replacement.suit
+                    replacements.append((card_id, f"{rank} of {suit}"))
+            else:
+                # No quantum operations - use original card values
+                if card_id.startswith("P"):
+                    player_num = int(card_id[1]) - 1
+                    card_num = int(card_id[3]) - 1
+                    if 0 <= player_num < len(self.players) and 0 <= card_num < len(self.players[player_num].hand):
+                        rank = self.players[player_num].hand[card_num].rank
+                        suit = self.players[player_num].hand[card_num].suit
+                elif card_id.startswith("COM"):
+                    com_num = int(card_id[3]) - 1
+                    if com_num < 3 and self.flop[com_num]:
+                        rank = self.flop[com_num].rank
+                        suit = self.flop[com_num].suit
+                    elif com_num == 3 and self.turn:
+                        rank = self.turn.rank
+                        suit = self.turn.suit
+                    elif com_num == 4 and self.river:
+                        rank = self.river.rank
+                        suit = self.river.suit
 
             decoded_cards[card_id] = (rank, suit)
             
             # Update the actual Card objects with measured values (for frontend display)
-            if card_id.startswith("P"):
-                player_num = int(card_id[1]) - 1
-                card_num = int(card_id[3]) - 1
-                if 0 <= player_num < len(self.players) and 0 <= card_num < len(self.players[player_num].hand):
-                    self.players[player_num].hand[card_num].suit = suit
-                    self.players[player_num].hand[card_num].rank = rank
-            elif card_id.startswith("F"):
-                flop_idx = int(card_id[1])
-                if 0 <= flop_idx < len(self.flop) and self.flop[flop_idx]:
-                    self.flop[flop_idx].suit = suit
-                    self.flop[flop_idx].rank = rank
-            elif card_id == "T" and self.turn:
-                self.turn.suit = suit
-                self.turn.rank = rank
-            elif card_id == "R" and self.river:
-                self.river.suit = suit
-                self.river.rank = rank
+            # Only update if quantum operations were performed
+            if has_quantum_operations:
+                if card_id.startswith("P"):
+                    player_num = int(card_id[1]) - 1
+                    card_num = int(card_id[3]) - 1
+                    if 0 <= player_num < len(self.players) and 0 <= card_num < len(self.players[player_num].hand):
+                        self.players[player_num].hand[card_num].suit = suit
+                        self.players[player_num].hand[card_num].rank = rank
+                elif card_id.startswith("F"):
+                    flop_idx = int(card_id[1])
+                    if 0 <= flop_idx < len(self.flop) and self.flop[flop_idx]:
+                        self.flop[flop_idx].suit = suit
+                        self.flop[flop_idx].rank = rank
+                elif card_id == "T" and self.turn:
+                    self.turn.suit = suit
+                    self.turn.rank = rank
+                elif card_id == "R" and self.river:
+                    self.river.suit = suit
+                    self.river.rank = rank
 
             # Pretty print card type (only for joined players)
             if card_id.startswith("P"):
