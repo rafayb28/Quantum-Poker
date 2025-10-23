@@ -96,11 +96,10 @@ export default function QuantumEntangle({
           <ChipStack amount={availableQuantumChips} size="lg" className="text-purple-400" />
         </div>
 
-        {/* Step 1: Select Your Card */}
+        {/* Select Your Card */}
         <div className="mb-8">
-          <h3 className="text-white font-semibold mb-4 flex items-center">
-            <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">1</span>
-            Select Your Card (Source)
+          <h3 className="text-white font-semibold mb-4">
+            Select Your Card & Bit
           </h3>
           <div className="flex justify-center gap-6">
             {myCards.map((card, index) => {
@@ -122,13 +121,57 @@ export default function QuantumEntangle({
               );
             })}
           </div>
+          
+          {/* Bit Selection for Source Card */}
+          {sourceCard !== null && (
+            <div className="mt-4">
+              <h4 className="text-gray-400 text-sm mb-3 text-center">Select which bit to manipulate:</h4>
+              <div className="grid grid-cols-3 gap-3 max-w-2xl mx-auto">
+                <button
+                  onClick={() => setBitIndex(0)}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    bitIndex === 0
+                      ? 'border-purple-500 bg-purple-600/30 ring-2 ring-purple-400'
+                      : 'border-gray-700 bg-gray-800/50 hover:border-purple-400'
+                  }`}
+                >
+                  <div className="text-white font-bold mb-1">Bit 0</div>
+                  <div className="text-purple-400 text-sm">±1 rank</div>
+                  <div className="text-gray-500 text-xs mt-1">Small</div>
+                </button>
+                <button
+                  onClick={() => setBitIndex(1)}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    bitIndex === 1
+                      ? 'border-purple-500 bg-purple-600/30 ring-2 ring-purple-400'
+                      : 'border-gray-700 bg-gray-800/50 hover:border-purple-400'
+                  }`}
+                >
+                  <div className="text-white font-bold mb-1">Bit 1</div>
+                  <div className="text-purple-400 text-sm">±2 rank</div>
+                  <div className="text-gray-500 text-xs mt-1">Medium</div>
+                </button>
+                <button
+                  onClick={() => setBitIndex(2)}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    bitIndex === 2
+                      ? 'border-purple-500 bg-purple-600/30 ring-2 ring-purple-400'
+                      : 'border-gray-700 bg-gray-800/50 hover:border-purple-400'
+                  }`}
+                >
+                  <div className="text-white font-bold mb-1">Bit 2</div>
+                  <div className="text-purple-400 text-sm">±4 rank</div>
+                  <div className="text-gray-500 text-xs mt-1">Large</div>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Step 2: Select Target Card */}
+        {/* Select Operation */}
         <div className="mb-8">
-          <h3 className="text-white font-semibold mb-4 flex items-center">
-            <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">2</span>
-            Select Target Card
+          <h3 className="text-white font-semibold mb-4">
+            Select Operation
           </h3>
           
           {/* Self-Superposition Option */}
@@ -289,35 +332,6 @@ export default function QuantumEntangle({
           })}
         </div>
 
-        {/* Step 3: Select Bit to Entangle */}
-        <div className="mb-8">
-          <h3 className="text-white font-semibold mb-4 flex items-center">
-            <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">3</span>
-            Select Rank Bit to Entangle
-          </h3>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { bit: 0, label: 'Bit 0', effect: '±1 rank', description: 'Small change (e.g., 7→6 or 7→8)' },
-              { bit: 1, label: 'Bit 1', effect: '±2 rank', description: 'Medium change (e.g., 7→5 or 7→9)' },
-              { bit: 2, label: 'Bit 2', effect: '±4 rank', description: 'Large change (e.g., 7→3 or 7→J)' }
-            ].map(({ bit, label, effect, description }) => (
-              <button
-                key={bit}
-                onClick={() => setBitIndex(bit)}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  bitIndex === bit
-                    ? 'border-purple-500 bg-purple-600/30'
-                    : 'border-gray-700 bg-gray-800/50 hover:border-purple-400'
-                }`}
-              >
-                <div className="text-white font-bold mb-1">{label}</div>
-                <div className="text-purple-400 text-sm mb-1">{effect}</div>
-                <div className="text-gray-400 text-xs">{description}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Info Box */}
         <div className="bg-purple-900 bg-opacity-30 border border-purple-500 rounded-lg p-4 mb-6">
           <div className="flex items-start">
@@ -327,13 +341,12 @@ export default function QuantumEntangle({
                 <strong>How it works:</strong>
               </p>
               <ul className="list-disc list-inside space-y-1 text-gray-400">
-                <li>Select one of your cards as the source</li>
-                <li>Select any visible card on the table as the target</li>
-                <li>Choose which rank bit to entangle (0, 1, or 2)</li>
-                <li>Creates quantum superposition between the selected bits</li>
-                <li>Cards collapse to actual values at showdown</li>
-                <li><strong className="text-purple-400">Your/Community cards: 1 chip</strong></li>
-                <li><strong className="text-orange-400">Opponent cards: 2 chips</strong> (more expensive)</li>
+                <li>Select one of your cards and which bit to manipulate (0-2)</li>
+                <li>Choose an operation: Superposition, Phase, or Entangle with another card</li>
+                <li>Affected cards collapse to quantum measurement at showdown</li>
+                <li><strong className="text-blue-400">Superposition/Phase: 1 chip</strong></li>
+                <li><strong className="text-purple-400">Entangle own/community: 1 chip</strong></li>
+                <li><strong className="text-orange-400">Entangle opponent: 2 chips</strong></li>
               </ul>
             </div>
           </div>
