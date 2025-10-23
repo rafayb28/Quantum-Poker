@@ -10,7 +10,7 @@ import PokerTable from '@/components/game/PokerTable';
 import BettingControls from '@/components/game/BettingControls';
 import QuantumEntangle from '@/components/game/QuantumEntangle';
 import { api } from '@/lib/api';
-import { ArrowLeft, Loader2, Users, Play, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, Play, Copy, Check, HelpCircle, X } from 'lucide-react';
 
 export default function GamePage() {
   const params = useParams();
@@ -38,6 +38,7 @@ export default function GamePage() {
   const { isConnected, reconnect } = useGameWebSocket(gameId);
   const [isStarting, setIsStarting] = useState(false);
   const [showQuantumModal, setShowQuantumModal] = useState(false);
+  const [showQuantumHelp, setShowQuantumHelp] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -312,17 +313,26 @@ export default function GamePage() {
                   
                   {/* Quantum Operations Button */}
                   {myPlayer.quantum_chips > 0 && myPlayer.hand && myPlayer.hand.length === 2 && (
-                    <button
-                      onClick={() => setShowQuantumModal(true)}
-                      disabled={!isConnected}
-                      className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                      <span className="text-xl">⚛️</span>
-                      <span>Quantum Operations</span>
-                      <span className="ml-2 text-xs bg-purple-500 px-2 py-0.5 rounded-full">
-                        {myPlayer.quantum_chips} available
-                      </span>
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowQuantumModal(true)}
+                        disabled={!isConnected}
+                        className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <span className="text-xl">⚛️</span>
+                        <span>Quantum Operations</span>
+                        <span className="ml-2 text-xs bg-purple-500 px-2 py-0.5 rounded-full">
+                          {myPlayer.quantum_chips} available
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => setShowQuantumHelp(true)}
+                        className="px-3 py-3 bg-purple-700 hover:bg-purple-600 text-white rounded-lg transition-colors flex items-center justify-center"
+                        title="How Quantum Operations Work"
+                      >
+                        <HelpCircle size={20} />
+                      </button>
+                    </div>
                   )}
                 </>
               )}
@@ -429,6 +439,160 @@ export default function GamePage() {
           onEntangle={handleQuantumEntangle}
           onCancel={() => setShowQuantumModal(false)}
         />
+      )}
+
+      {/* Quantum Help Modal */}
+      {showQuantumHelp && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-purple-500">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-bold text-white flex items-center gap-2">
+                <span className="text-3xl">⚛️</span>
+                How Quantum Operations Work
+              </h2>
+              <button
+                onClick={() => setShowQuantumHelp(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-6 text-white">
+              {/* Bitwise Explanation */}
+              <div className="bg-gray-800 rounded-lg p-4 border border-purple-700">
+                <h3 className="text-xl font-bold text-purple-400 mb-3">Card Encoding (6 Qubits)</h3>
+                <p className="text-gray-300 mb-3">Each card is encoded as 6 quantum bits:</p>
+                <div className="bg-gray-900 rounded p-3 font-mono text-sm">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-purple-400 mb-2">Rank (4 bits):</div>
+                      <div className="space-y-1 text-gray-300">
+                        <div>Bit 0: ±1 rank</div>
+                        <div>Bit 1: ±2 rank</div>
+                        <div>Bit 2: ±4 rank</div>
+                        <div>Bit 3: ±8 rank</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-blue-400 mb-2">Suit (2 bits):</div>
+                      <div className="space-y-1 text-gray-300">
+                        <div>00 = Spades ♠</div>
+                        <div>01 = Diamonds ♦</div>
+                        <div>10 = Clubs ♣</div>
+                        <div>11 = Hearts ♥</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-gray-400 text-sm mt-3">
+                  <strong>Note:</strong> Only rank bits 0-2 can be manipulated (suit is locked)
+                </p>
+              </div>
+
+              {/* Superposition */}
+              <div className="bg-gray-800 rounded-lg p-4 border border-blue-700">
+                <h3 className="text-xl font-bold text-blue-400 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">⚛️</span>
+                  Superposition (H Gate)
+                </h3>
+                <p className="text-gray-300 mb-3">Puts a single bit of your card into quantum superposition - 50/50 chance to flip.</p>
+                <div className="bg-gray-900 rounded p-3 space-y-2">
+                  <div className="font-bold text-blue-300">Example: 7♠ → Bit 0 (±1)</div>
+                  <div className="font-mono text-sm space-y-1">
+                    <div>Before: 7 = 0111 (binary)</div>
+                    <div className="text-yellow-400">Operation: H gate on bit 0</div>
+                    <div>After measurement:</div>
+                    <div className="ml-4">• 50% → 0110 = 6♠</div>
+                    <div className="ml-4">• 50% → 1000 = 8♠</div>
+                  </div>
+                </div>
+                <div className="mt-3 text-sm text-gray-400">
+                  <strong>Cost:</strong> 1 quantum chip | <strong>Risk:</strong> Your card might get worse!
+                </div>
+              </div>
+
+              {/* Phase Interference */}
+              <div className="bg-gray-800 rounded-lg p-4 border border-indigo-700">
+                <h3 className="text-xl font-bold text-indigo-400 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">〰️</span>
+                  Phase Interference (Z Gate)
+                </h3>
+                <p className="text-gray-300 mb-3">Applies a phase shift to a bit - changes measurement probabilities when combined with other operations.</p>
+                <div className="bg-gray-900 rounded p-3 space-y-2">
+                  <div className="font-bold text-indigo-300">Advanced Technique</div>
+                  <div className="text-sm text-gray-300 space-y-1">
+                    <div>• Z gate alone doesn't change measurement</div>
+                    <div>• Creates interference patterns with entanglement</div>
+                    <div>• Can bias outcomes when multiple operations combine</div>
+                    <div>• Strategic for controlling quantum correlations</div>
+                  </div>
+                </div>
+                <div className="mt-3 text-sm text-gray-400">
+                  <strong>Cost:</strong> 1 quantum chip | <strong>Use:</strong> Combine with entanglement for control
+                </div>
+              </div>
+
+              {/* Entanglement */}
+              <div className="bg-gray-800 rounded-lg p-4 border border-green-700">
+                <h3 className="text-xl font-bold text-green-400 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">🔗</span>
+                  Entanglement (H + CNOT Gates)
+                </h3>
+                <p className="text-gray-300 mb-3">Links two cards together - when one changes, the other changes in a correlated way.</p>
+                <div className="bg-gray-900 rounded p-3 space-y-2">
+                  <div className="font-bold text-green-300">Example: Entangle 7♠ with K♥ (Bit 1 = ±2)</div>
+                  <div className="font-mono text-sm space-y-1">
+                    <div>Card A: 7♠ = 0111</div>
+                    <div>Card B: K♥ = 1101</div>
+                    <div className="text-yellow-400">Operation: H on A + CNOT(A→B) on bit 1</div>
+                    <div>Possible outcomes:</div>
+                    <div className="ml-4">• 50% → 7♠ (0111) & K♥ (1101) - both stay same</div>
+                    <div className="ml-4">• 50% → 5♠ (0101) & J♥ (1011) - both change ±2</div>
+                  </div>
+                </div>
+                <div className="mt-3 text-sm text-gray-400 space-y-1">
+                  <div><strong>Cost:</strong> 1 chip (your/community) or 2 chips (opponent)</div>
+                  <div><strong>Strategy:</strong> Great for hedging - if your card gets worse, theirs does too!</div>
+                </div>
+              </div>
+
+              {/* Important Notes */}
+              <div className="bg-gray-800 rounded-lg p-4 border border-yellow-700">
+                <h3 className="text-xl font-bold text-yellow-400 mb-3">⚠️ Important Rules</h3>
+                <ul className="space-y-2 text-gray-300">
+                  <li className="flex items-start gap-2">
+                    <span className="text-yellow-400 mt-1">•</span>
+                    <span>Only cards affected by operations change at showdown</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-yellow-400 mt-1">•</span>
+                    <span>Untouched cards remain exactly as dealt</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-yellow-400 mt-1">•</span>
+                    <span>You get 2 quantum chips per hand</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-yellow-400 mt-1">•</span>
+                    <span>Card suits never change (only ranks)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-yellow-400 mt-1">•</span>
+                    <span>Measurements are random but follow quantum probabilities</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowQuantumHelp(false)}
+              className="mt-6 w-full px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
