@@ -774,6 +774,26 @@ class QuantumPoker:
             
             decoded_cards[card_id] = (rank, suit)
             
+            # Update the actual Card objects with measured values (for frontend display)
+            if rank != "ERROR" and suit != "ERROR":
+                if card_id.startswith("P"):
+                    player_num = int(card_id[1]) - 1
+                    card_num = int(card_id[3]) - 1
+                    if 0 <= player_num < len(self.players) and 0 <= card_num < len(self.players[player_num].hand):
+                        self.players[player_num].hand[card_num].suit = suit
+                        self.players[player_num].hand[card_num].rank = rank
+                elif card_id.startswith("F"):
+                    flop_idx = int(card_id[1])
+                    if 0 <= flop_idx < len(self.flop) and self.flop[flop_idx]:
+                        self.flop[flop_idx].suit = suit
+                        self.flop[flop_idx].rank = rank
+                elif card_id == "T" and self.turn:
+                    self.turn.suit = suit
+                    self.turn.rank = rank
+                elif card_id == "R" and self.river:
+                    self.river.suit = suit
+                    self.river.rank = rank
+            
             # Pretty print card type (only for joined players)
             if card_id.startswith("P"):
                 player_num = card_id[1]
