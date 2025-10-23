@@ -840,6 +840,14 @@ class QuantumPoker:
 
         # Check if any quantum operations were performed
         has_quantum_operations = len(self.qc_manager.entanglement_history) > 0
+        
+        # Track which cards were affected by quantum operations
+        affected_cards = set()
+        if has_quantum_operations:
+            for source, target, _, _ in self.qc_manager.entanglement_history:
+                affected_cards.add(source)
+                if target not in ["SELF", "PHASE"]:
+                    affected_cards.add(target)
 
         if has_quantum_operations:
             # Run simulation without strict filtering (accept quantum measurement errors as part of gameplay)
@@ -875,8 +883,11 @@ class QuantumPoker:
         replacements = []
 
         for card_id in self.qc_manager.registered_cards:
-            if has_quantum_operations:
-                # Decode from quantum measurement
+            # Check if this specific card was affected by quantum operations
+            card_was_affected = card_id in affected_cards if has_quantum_operations else False
+            
+            if has_quantum_operations and card_was_affected:
+                # Decode from quantum measurement for affected cards only
                 rank, suit = self.qc_manager.decode_measurement(winning_bitstring, card_id)
 
                 # If measurement is out of bounds, replace with the next card in the deck
