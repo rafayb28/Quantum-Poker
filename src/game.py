@@ -157,7 +157,7 @@ class QuantumPoker:
             player.folded = False
             player.all_in = False
             player.current_bet = 0
-            player.quantum_chips = 2  # Refresh quantum chips each hand
+            player.quantum_chips = 3  # Refresh quantum chips each hand
             player.entanglement_history = []  # Clear entanglement history
 
         # Increment hand counter
@@ -1283,9 +1283,10 @@ class QuantumPoker:
             "players": [
                 p.to_dict(
                     reveal_cards=(
-                        viewing_player is None 
+                        viewing_player is None
                         or p.number == viewing_player
-                        or self.current_round == "showdown"  # Reveal all cards at showdown
+                        or self.current_round
+                        == "showdown"  # Reveal all cards at showdown
                     )
                 )
                 for p in self.players
