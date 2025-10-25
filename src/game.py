@@ -67,9 +67,6 @@ class QuantumPoker:
         )  # Track who last raised (to know when round is complete)
         self.betting_round_active = False
 
-        # Deck index for dealing
-        self.deck_index = 0
-
         # Session tracking
         self.hand_number = 0
         self.session_active = False
@@ -141,7 +138,6 @@ class QuantumPoker:
             for rank in RANKS:
                 self.deck.append(Card(suit, rank))
         self.shuffle_deck()
-        self.deck_index = 0
 
         # Reset community cards
         self.flop = [None, None, None]
@@ -180,9 +176,8 @@ class QuantumPoker:
                 continue
 
             # Deal two cards
-            card1 = self.deck[self.deck_index]
-            card2 = self.deck[self.deck_index + 1]
-            self.deck_index += 2
+            card1 = self.deck.pop()
+            card2 = self.deck.pop()
 
             # Add to quantum circuit with identifiers
             identifier1 = f"P{player.number}H1"
@@ -201,16 +196,13 @@ class QuantumPoker:
         if self.current_round != "pre-flop":
             raise ValueError("Flop can only be dealt after pre-flop")
 
-        # Burn one card (optional in quantum version, but keeping for tradition)
-        self.deck_index += 1
+        # Burn card
+        self.deck.pop()
 
         # Deal 3 cards
         for i in range(3):
-            card = self.deck[self.deck_index]
-            self.deck_index += 1
-
-            identifier = f"F{i}"
-            self.qc_manager.add_card(card, identifier)
+            card = self.deck.pop()
+            self.qc_manager.add_card(card, f"F{i}")
             self.flop[i] = card
 
         self.current_round = "flop"
@@ -222,12 +214,10 @@ class QuantumPoker:
         if self.current_round != "flop":
             raise ValueError("Turn can only be dealt after flop")
 
-        # Burn one card
-        self.deck_index += 1
+        # Burn card
+        self.deck.pop()
 
-        card = self.deck[self.deck_index]
-        self.deck_index += 1
-
+        card = self.deck.pop()
         self.qc_manager.add_card(card, "T")
         self.turn = card
 
@@ -240,12 +230,10 @@ class QuantumPoker:
         if self.current_round != "turn":
             raise ValueError("River can only be dealt after turn")
 
-        # Burn one card
-        self.deck_index += 1
+        # Burn card
+        self.deck.pop()
 
-        card = self.deck[self.deck_index]
-        self.deck_index += 1
-
+        card = self.deck.pop()
         self.qc_manager.add_card(card, "R")
         self.river = card
 
@@ -734,7 +722,6 @@ class QuantumPoker:
         # Reset game state
         self.pot = 0
         self.current_bet = 0
-        self.deck_index = 0
         self.shuffle_deck()
 
         # Reset quantum circuit for new hand
@@ -867,11 +854,7 @@ class QuantumPoker:
 
             if not rank or not suit:
                 has_invalid = True
-                # measurement out of bounds - draw replacement card
-                if self.deck_index >= len(self.deck):
-                    self.deck_index = 0
-                replacement = self.deck[self.deck_index]
-                self.deck_index += 1
+                replacement = self.deck.pop()
                 rank, suit = replacement.rank, replacement.suit
                 replacements.append((card_id, f"{rank} of {suit}"))
 
