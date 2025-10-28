@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card as CardType, Player } from '@/types/game';
 import Card from '@/components/shared/Card';
 import ChipStack from '@/components/shared/ChipStack';
-import { Zap, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Zap, User, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useParams } from 'next/navigation';
 
 interface QuantumEntangleProps {
   myCards: CardType[];
@@ -21,6 +23,19 @@ interface QuantumEntangleProps {
   onCancel: () => void;
 }
 
+interface ProbabilityOutcome {
+  card: string;
+  probability: number;
+}
+
+interface PreviewData {
+  source_card: string;
+  operation: string;
+  bit_index: number;
+  angle?: number;
+  outcomes: ProbabilityOutcome[];
+}
+
 export default function QuantumEntangle({
   myCards,
   communityCards,
@@ -30,11 +45,16 @@ export default function QuantumEntangle({
   onEntangle,
   onCancel
 }: QuantumEntangleProps) {
+  const params = useParams();
+  const gameId = params.gameId as string;
+  
   const [sourceCard, setSourceCard] = useState<number | null>(null);
   const [targetCardId, setTargetCardId] = useState<string | null>(null);
   const [bitIndex, setBitIndex] = useState<number>(0);
   const [expandedOpponents, setExpandedOpponents] = useState<Set<number>>(new Set());
   const [angleDeg, setAngleDeg] = useState<number>(180); // slider degrees (0-360)
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Calculate cost based on target
   const isSelfSuperposition = targetCardId === 'SELF';
@@ -42,6 +62,37 @@ export default function QuantumEntangle({
   const isOpponentCard = targetCardId?.startsWith('P') && !targetCardId.startsWith(`P${myPlayerNumber}H`) && targetCardId !== 'PHASE';
   const chipCost = isOpponentCard ? 2 : 1;
   const hasEnoughChips = availableQuantumChips >= chipCost;
+
+  // Fetch probability preview when operation parameters change
+  useEffect(() => {
+    if (sourceCard !== null && targetCardId !== null) {
+      const fetchPreview = async () => {
+        setLoadingPreview(true);
+        try {
+          const angleRad = targetCardId === 'PHASE' ? (angleDeg * Math.PI) / 180 : undefined;
+          const data = await api.previewQuantumOperation(
+            gameId,
+            sourceCard,
+            targetCardId,
+            bitIndex,
+            angleRad
+          );
+          setPreview(data);
+        } catch (error) {
+          console.error('Failed to fetch preview:', error);
+          setPreview(null);
+        } finally {
+          setLoadingPreview(false);
+        }
+      };
+
+      // Debounce the API call slightly for angle slider
+      const timeoutId = setTimeout(fetchPreview, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setPreview(null);
+    }
+  }, [sourceCard, targetCardId, bitIndex, angleDeg, gameId]);
 
   const handleSourceSelect = (index: number) => {
     setSourceCard(index);
@@ -359,6 +410,53 @@ export default function QuantumEntangle({
             );
           })}
         </div>
+
+        {/* Probability Preview */}
+        {preview && (
+          <div className="bg-gradient-to-br from-purple-900/40 to-blue-900/40 border-2 border-purple-400 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="text-purple-400" size={20} />
+              <h3 className="text-white font-semibold">Probability Preview</h3>
+              {loadingPreview && (
+                <span className="text-xs text-gray-400">(updating...)</span>
+              )}
+            </div>
+            
+            <div className="text-sm text-gray-300 mb-3">
+              <p>Source: <span className="text-white font-medium">{preview.source_card}</span></p>
+              <p className="text-xs text-gray-400 mt-1">
+                Most likely outcomes at showdown:
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {preview.outcomes.map((outcome, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  <div className="flex-1 bg-gray-800/50 rounded-full h-6 relative overflow-hidden">
+                    <div 
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
+                      style={{ width: `${outcome.probability}%` }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-between px-3">
+                      <span className="text-xs font-medium text-white drop-shadow">
+                        {outcome.card}
+                      </span>
+                      <span className="text-xs font-bold text-white drop-shadow">
+                        {outcome.probability}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {targetCardId === 'PHASE' && (
+              <p className="text-xs text-gray-400 mt-3 italic">
+                💡 Tip: Adjust the angle slider to see how phase changes probabilities
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Info Box */}
         <div className="bg-purple-900 bg-opacity-30 border border-purple-500 rounded-lg p-4 mb-6">
