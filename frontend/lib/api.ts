@@ -104,16 +104,23 @@ export const api = {
     gameId: string,
     source_card_idx: number,
     target_card_id: string,
-    bit_index: number
+    bit_index: number,
+    angle?: number
   ) {
+    const body: any = {
+      action: 'entangle',
+      source_card_idx,
+      target_card_id,
+      bit_index,
+    };
+
+    if (typeof angle === 'number') {
+      body.angle = angle;
+    }
+
     return fetchWithAuth(`/game/${gameId}/quantum-action`, {
       method: 'POST',
-      body: JSON.stringify({
-        action: 'entangle',
-        source_card_idx,
-        target_card_id,
-        bit_index,
-      }),
+      body: JSON.stringify(body),
     });
   },
   

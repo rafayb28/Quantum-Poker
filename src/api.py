@@ -133,6 +133,8 @@ class QuantumActionRequest(BaseModel):
     source_card_idx: int  # 0 or 1 for hole cards
     target_card_id: str  # e.g., "F0", "P2H1"
     bit_index: int  # 0-2 (rank bits only: 0=±1, 1=±2, 2=±4)
+    # Optional angle for phase (radians). If provided, used for RZ rotations.
+    angle: Optional[float] = None
 
 
 class PlayerState(BaseModel):
@@ -639,6 +641,7 @@ async def perform_quantum_action(
                 request.source_card_idx,
                 request.target_card_id,
                 request.bit_index,
+                request.angle,
             )
 
             source_id = f"P{player_number}H{request.source_card_idx + 1}"
@@ -653,6 +656,7 @@ async def perform_quantum_action(
                 "target": request.target_card_id,
                 "bit": request.bit_index,
                 "effect": bit_effects[request.bit_index],
+                "angle": request.angle,
                 "quantum_chips_remaining": player.quantum_chips,
                 "state": game.to_dict(viewing_player=player_number),
             }

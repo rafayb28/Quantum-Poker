@@ -12,7 +12,12 @@ interface QuantumEntangleProps {
   opponents: Player[];
   myPlayerNumber: number;
   availableQuantumChips: number;
-  onEntangle: (sourceCardIndex: number, targetCardId: string, bitIndex: number) => void;
+  onEntangle: (
+    sourceCardIndex: number,
+    targetCardId: string,
+    bitIndex: number,
+    angle?: number
+  ) => void;
   onCancel: () => void;
 }
 
@@ -29,6 +34,7 @@ export default function QuantumEntangle({
   const [targetCardId, setTargetCardId] = useState<string | null>(null);
   const [bitIndex, setBitIndex] = useState<number>(0);
   const [expandedOpponents, setExpandedOpponents] = useState<Set<number>>(new Set());
+  const [angleDeg, setAngleDeg] = useState<number>(180); // slider degrees (0-360)
 
   // Calculate cost based on target
   const isSelfSuperposition = targetCardId === 'SELF';
@@ -67,7 +73,13 @@ export default function QuantumEntangle({
 
   const handleConfirm = () => {
     if (sourceCard !== null && targetCardId !== null) {
-      onEntangle(sourceCard, targetCardId, bitIndex);
+      if (targetCardId === 'PHASE') {
+        // Convert degrees to radians for backend (Qiskit expects radians)
+        const angleRad = (angleDeg * Math.PI) / 180;
+        onEntangle(sourceCard, targetCardId, bitIndex, angleRad);
+      } else {
+        onEntangle(sourceCard, targetCardId, bitIndex);
+      }
     }
   };
 
@@ -225,6 +237,22 @@ export default function QuantumEntangle({
                 )}
               </div>
             </button>
+            {/* Angle slider shown when PHASE selected */}
+            {targetCardId === 'PHASE' && (
+              <div className="mt-3 px-2">
+                <label className="text-sm text-gray-400">Phase Angle: {angleDeg}°</label>
+                <input
+                  type="range"
+                  min={0}
+                  max={360}
+                  step={1}
+                  value={angleDeg}
+                  onChange={(e) => setAngleDeg(parseInt(e.target.value, 10))}
+                  className="w-full mt-2"
+                />
+                <div className="text-xs text-gray-500 mt-1">(0° = no-op, 180° ≈ Z gate)</div>
+              </div>
+            )}
           </div>
           
           {/* Community Cards */}

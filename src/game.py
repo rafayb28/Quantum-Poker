@@ -252,7 +252,12 @@ class QuantumPoker:
         self.current_round = "river"
 
     def entangle_cards(
-        self, player: Player, source_card_idx: int, target_card_id: str, bit_index: int
+        self,
+        player: Player,
+        source_card_idx: int,
+        target_card_id: str,
+        bit_index: int,
+        angle: float | None = None,
     ):
         """
         Allow a player to entangle one of their cards with another card, or put card in superposition/phase.
@@ -305,8 +310,8 @@ class QuantumPoker:
 
         # Check for phase/interference (only costs 1 chip)
         if target_card_id == "PHASE":
-            # Apply phase gate for interference
-            self.qc_manager.apply_phase(source_card_id, bit_index)
+            # Apply phase (RZ) gate for interference; angle expected in radians
+            self.qc_manager.apply_phase(source_card_id, bit_index, angle)
             player.quantum_chips -= 1
 
             bit_effect = ["±1", "±2", "±4"][bit_index]
@@ -316,11 +321,13 @@ class QuantumPoker:
                     "target": "PHASE",
                     "bit": bit_index,
                     "effect": bit_effect,
+                    "angle": angle,
                 }
             )
 
+            ang_display = f" angle={angle:.2f}rad" if angle is not None else ""
             print(
-                f"{player.name} applied phase gate to {source_card_id} "
+                f"{player.name} applied phase (RZ){ang_display} to {source_card_id} "
                 f"(bit {bit_index}: interference effect)"
             )
             return
@@ -843,7 +850,10 @@ class QuantumPoker:
 
         # Track which cards were affected by quantum operations
         affected_cards = set()
-        for source, target, _, _ in self.qc_manager.entanglement_history:
+        for entry in self.qc_manager.entanglement_history:
+            # entry layout: (card1, card2, bit_idx, op_name, optional)
+            source = entry[0]
+            target = entry[1]
             affected_cards.add(source)
             if target not in ["SELF", "PHASE"]:
                 affected_cards.add(target)

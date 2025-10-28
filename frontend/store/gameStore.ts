@@ -15,7 +15,7 @@ interface GameStore extends Partial<GameState> {
   setGameId: (gameId: string, playerNumber: number) => void;
   clearGame: () => void;
   performAction: (action: string, amount?: number) => Promise<void>;
-  performQuantumAction: (source: number, target: string, bit: number) => Promise<void>;
+  performQuantumAction: (source: number, target: string, bit: number, angle?: number) => Promise<void>;
   loadGameState: () => Promise<void>;
   clearError: () => void;
 }
@@ -68,13 +68,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
   
-  performQuantumAction: async (source: number, target: string, bit: number) => {
+  performQuantumAction: async (source: number, target: string, bit: number, angle?: number) => {
     const { gameId } = get();
     if (!gameId) return;
     
     set({ isLoading: true, error: null });
     try {
-      await api.performQuantumAction(gameId, source, target, bit);
+  await api.performQuantumAction(gameId, source, target, bit, angle);
       set({ isLoading: false });
     } catch (error: any) {
       set({
