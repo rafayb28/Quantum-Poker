@@ -94,9 +94,14 @@ export default function GamePage() {
     }
   };
 
-  const handleQuantumEntangle = async (sourceCardIndex: number, targetCardId: string, bitIndex: number) => {
+  const handleQuantumEntangle = async (
+    sourceCardIndex: number,
+    targetCardId: string,
+    bitIndex: number,
+    angle?: number
+  ) => {
     try {
-      await performQuantumAction(sourceCardIndex, targetCardId, bitIndex);
+      await performQuantumAction(sourceCardIndex, targetCardId, bitIndex, angle);
       setShowQuantumModal(false);
       await loadGameState();
     } catch (error: any) {

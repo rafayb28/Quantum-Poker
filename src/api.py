@@ -133,6 +133,8 @@ class QuantumActionRequest(BaseModel):
     source_card_idx: int  # 0 or 1 for hole cards
     target_card_id: str  # e.g., "F0", "P2H1"
     bit_index: int  # 0-2 (rank bits only: 0=±1, 1=±2, 2=±4)
+    # Optional angle for phase (radians). If provided, used for RZ rotations.
+    angle: Optional[float] = None
 
 
 class PlayerState(BaseModel):
@@ -639,6 +641,7 @@ async def perform_quantum_action(
                 request.source_card_idx,
                 request.target_card_id,
                 request.bit_index,
+                request.angle,
             )
 
             source_id = f"P{player_number}H{request.source_card_idx + 1}"
@@ -653,6 +656,7 @@ async def perform_quantum_action(
                 "target": request.target_card_id,
                 "bit": request.bit_index,
                 "effect": bit_effects[request.bit_index],
+                "angle": request.angle,
                 "quantum_chips_remaining": player.quantum_chips,
                 "state": game.to_dict(viewing_player=player_number),
             }
@@ -700,6 +704,99 @@ async def trigger_showdown(game_id: str, token: str = Depends(verify_game_access
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Showdown failed: {str(e)}")
+
+
+@app.post("/game/{game_id}/preview-quantum")
+async def preview_quantum_operation(
+    game_id: str,
+    request: QuantumActionRequest,
+    token: str = Depends(verify_game_access)
+):
+    """
+    Preview the probability distribution of a quantum operation without applying it.
+    Returns the most likely card outcomes with their probabilities.
+    """
+    if game_id not in active_games:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    game = active_games[game_id]
+    session = session_manager.get_session(token)
+    player_number = session.player_number
+
+    if player_number < 1 or player_number > game.num_players:
+        raise HTTPException(status_code=400, detail="Invalid player number")
+
+    player = game.players[player_number - 1]
+
+    try:
+        from .quantum_circuit import QuantumPokerCircuit
+        from .card import Card
+
+        # Create a temporary quantum circuit for simulation
+        temp_qc = QuantumPokerCircuit()
+
+        # Get the source card
+        if request.source_card_idx not in [0, 1]:
+            raise HTTPException(status_code=400, detail="Invalid source card index")
+
+        source_card = player.hand[request.source_card_idx]
+        source_card_id = f"P{player_number}H{request.source_card_idx + 1}"
+
+        # Add source card to temp circuit
+        temp_source = Card(source_card.suit, source_card.rank)
+        temp_qc.add_card(temp_source, source_card_id)
+
+        # Apply the quantum operation
+        if request.target_card_id == "SELF":
+            # Superposition
+            temp_qc.apply_hadamard(source_card_id, request.bit_index)
+        elif request.target_card_id == "PHASE":
+            # Phase with angle
+            angle = request.angle if request.angle is not None else 3.14159  # pi
+            # For phase to have visible effect, apply H first, then RZ, then H again
+            temp_qc.apply_hadamard(source_card_id, request.bit_index)
+            temp_qc.apply_phase(source_card_id, request.bit_index, angle)
+            temp_qc.apply_hadamard(source_card_id, request.bit_index)
+        else:
+            # Entanglement - for preview, just show superposition effect on source
+            temp_qc.apply_hadamard(source_card_id, request.bit_index)
+
+        # Measure and simulate
+        temp_qc.measure_cards()
+        results = temp_qc.simulate(shots=1000)
+
+        # Decode outcomes and calculate probabilities
+        outcome_probs = {}
+        for bitstring, count in results.items():
+            rank, suit = temp_qc.decode_measurement(bitstring, source_card_id)
+            if rank and suit:
+                card_str = f"{rank} of {suit}"
+                prob = count / 1000.0
+                if card_str in outcome_probs:
+                    outcome_probs[card_str] += prob
+                else:
+                    outcome_probs[card_str] = prob
+
+        # Sort by probability and return top outcomes
+        sorted_outcomes = sorted(
+            outcome_probs.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )[:5]  # Top 5 most likely outcomes
+
+        return {
+            "source_card": f"{source_card.rank} of {source_card.suit}",
+            "operation": request.target_card_id,
+            "bit_index": request.bit_index,
+            "angle": request.angle,
+            "outcomes": [
+                {"card": card, "probability": round(prob * 100, 1)}
+                for card, prob in sorted_outcomes
+            ]
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/game/{game_id}/next-round")

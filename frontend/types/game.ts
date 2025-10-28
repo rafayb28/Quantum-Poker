@@ -75,6 +75,7 @@ export interface QuantumActionRequest {
   source_card_idx: number;
   target_card_id: string;
   bit_index: number;
+  angle?: number; // optional angle in radians for phase (RZ)
 }
 
 export interface CreateGameRequest {

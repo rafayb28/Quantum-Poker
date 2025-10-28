@@ -7,7 +7,8 @@ needed for quantum operations during the game.
 
 import qiskit
 from qiskit.circuit import QuantumRegister, ClassicalRegister
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
+import math
 
 from .card import Card, SUITS, RANKS
 
@@ -31,9 +32,11 @@ class QuantumPokerCircuit:
 
         # Track which cards have been added
         self.registered_cards: List[str] = []
-
-        # Entanglement history: [(card1_id, card2_id, bit_index, operation_type)]
-        self.entanglement_history: List[Tuple[str, str, int, str]] = []
+        # Entanglement history entries are tuples with flexible payloads:
+        # (card1_id, card2_id, bit_index, op_name, optional_param)
+        # For H+CNOT and SELF entries optional_param is None.
+        # For PHASE/RZ entries optional_param contains the angle (float, radians).
+        self.entanglement_history: List[Tuple] = []
 
         self.classical_register = None
 
@@ -106,7 +109,8 @@ class QuantumPokerCircuit:
             self.circuit.h(reg1[bit_index])
             self.circuit.cx(reg1[bit_index], reg2[bit_index])
 
-            self.entanglement_history.append((card1_id, card2_id, bit_index, "H+CNOT"))
+            # Record entanglement (no extra parameter)
+            self.entanglement_history.append((card1_id, card2_id, bit_index, "H+CNOT", None))
 
         # TODO: Implement options 2-5
         else:
@@ -137,11 +141,10 @@ class QuantumPokerCircuit:
 
         # Apply Hadamard to create superposition
         self.circuit.h(reg[bit_index])
+        # Record in history as self-superposition (no extra parameter)
+        self.entanglement_history.append((card_id, "SELF", bit_index, "H", None))
 
-        # Record in history as self-superposition
-        self.entanglement_history.append((card_id, "SELF", bit_index, "H"))
-
-    def apply_phase(self, card_id: str, bit_index: int):
+    def apply_phase(self, card_id: str, bit_index: int, angle: Optional[float] = None):
         """
         Apply Phase (Z) gate to a specific bit of a card to create interference.
 
@@ -162,11 +165,16 @@ class QuantumPokerCircuit:
 
         reg, start, _ = self.card_register_map[card_id]
 
-        # Apply Z gate (phase flip)
-        self.circuit.z(reg[bit_index])
+        # Default to pi (Z equivalent) if no angle provided
+        if angle is None:
+            angle = math.pi
 
-        # Record in history
-        self.entanglement_history.append((card_id, "PHASE", bit_index, "Z"))
+        # Apply RZ rotation by `angle` (radians)
+        # Qiskit expects the angle in radians
+        self.circuit.rz(angle, reg[bit_index])
+
+        # Record in history including the angle parameter
+        self.entanglement_history.append((card_id, "PHASE", bit_index, "RZ", angle))
 
     # def prepare_measurement(self):
     #     """
@@ -216,8 +224,13 @@ class QuantumPokerCircuit:
             card_id: [] for card_id in self.registered_cards
         }
 
-        for card1, card2, bit_idx, _ in self.entanglement_history:
-            # Skip SELF and PHASE operations - they're not entanglements between cards
+        for entry in self.entanglement_history:
+            # entry layout: (card1, card2, bit_idx, op_name, optional)
+            card1 = entry[0]
+            card2 = entry[1]
+            bit_idx = entry[2]
+
+            # Skip SELF and PHASE entries - they're not bipartite entanglements
             if card2 in ["SELF", "PHASE"]:
                 continue
 

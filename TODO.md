@@ -1,4 +1,4 @@
-1. Whenver there is no pair, trip, flush, etc. - the winner must be determined by the highest card, in the event of a tie, break by order of suit.
+1. Whenever there is no pair, trip, flush, etc. - the winner must be determined by the highest card, in the event of a tie, break by order of suit.
 
 2. Maybe highlight the player that wins, or have a piece of text state the winner
 
