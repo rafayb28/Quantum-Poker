@@ -7,6 +7,7 @@ needed for quantum operations during the game.
 
 import qiskit
 from qiskit.circuit import QuantumRegister, ClassicalRegister
+from qiskit_aer import AerSimulator
 from typing import Dict, List, Tuple, Optional
 import math
 
@@ -110,7 +111,9 @@ class QuantumPokerCircuit:
             self.circuit.cx(reg1[bit_index], reg2[bit_index])
 
             # Record entanglement (no extra parameter)
-            self.entanglement_history.append((card1_id, card2_id, bit_index, "H+CNOT", None))
+            self.entanglement_history.append(
+                (card1_id, card2_id, bit_index, "H+CNOT", None)
+            )
 
         # TODO: Implement options 2-5
         else:
@@ -280,9 +283,7 @@ class QuantumPokerCircuit:
         Returns:
             Dictionary of measurement outcomes and their counts
         """
-        from qiskit_aer import Aer
-
-        backend = Aer.get_backend("qasm_simulator")
+        backend = AerSimulator(method="matrix_product_state")
         job = backend.run(self.circuit, shots=shots)
         result = job.result()
         counts = result.get_counts(self.circuit)
