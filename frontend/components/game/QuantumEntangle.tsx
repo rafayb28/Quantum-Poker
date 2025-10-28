@@ -8,9 +8,14 @@ import { Zap, User, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useParams } from 'next/navigation';
 
+interface CommunityCardWithId {
+  card: CardType;
+  id: string;
+}
+
 interface QuantumEntangleProps {
   myCards: CardType[];
-  communityCards: CardType[];
+  communityCards: CommunityCardWithId[];
   opponents: Player[];
   myPlayerNumber: number;
   availableQuantumChips: number;
@@ -311,12 +316,12 @@ export default function QuantumEntangle({
             <div className="mb-6">
               <h4 className="text-gray-400 text-sm mb-3">Community Cards</h4>
               <div className="flex justify-center gap-4">
-                {communityCards.map((card, index) => {
-                  const cardId = `F${index}`;
+                {communityCards.map((cardWithId, index) => {
+                  const cardId = cardWithId.id;
                   const isSourceCard = sourceCard !== null && `P${myPlayerNumber}H${sourceCard + 1}` === cardId;
                   return (
                     <button
-                      key={`community-${index}`}
+                      key={`community-${cardId}`}
                       onClick={() => handleTargetSelect(cardId)}
                       disabled={isSourceCard}
                       className={`transform transition-all duration-200 hover:scale-105 ${
@@ -329,7 +334,7 @@ export default function QuantumEntangle({
                           : ''
                       }`}
                     >
-                      <Card card={card} />
+                      <Card card={cardWithId.card} />
                     </button>
                   );
                 })}

@@ -435,9 +435,9 @@ export default function GamePage() {
         <QuantumEntangle
           myCards={myPlayer.hand}
           communityCards={[
-            ...(community_cards?.flop || []),
-            ...(community_cards?.turn ? [community_cards.turn] : []),
-            ...(community_cards?.river ? [community_cards.river] : [])
+            ...(community_cards?.flop || []).map((card, idx) => ({ card, id: `F${idx}` })),
+            ...(community_cards?.turn ? [{ card: community_cards.turn, id: 'T' }] : []),
+            ...(community_cards?.river ? [{ card: community_cards.river, id: 'R' }] : [])
           ]}
           opponents={players?.filter(p => p.number !== myPlayerNumber && p.name) || []}
           myPlayerNumber={myPlayerNumber || 0}
