@@ -242,7 +242,7 @@ class QuantumPokerCircuit:
 
         return graph
 
-    def decode_card(self, card_id: str):
+    def decode_measurement(self, card_id: str) -> Tuple[Optional[str], Optional[str]]:
         """
         Decode a card after measurement, reading from the circuit's classical bitsring
         """
@@ -292,75 +292,3 @@ class QuantumPokerCircuit:
         self._last_bitstring = max(counts.items(), key=lambda kv: kv[1])
 
         return counts
-
-    def _is_valid_measurement(self, bitstring: str) -> bool:
-        """
-        Check if a measurement bitstring contains only valid card values.
-
-        Args:
-            bitstring: Full measurement bitstring
-
-        Returns:
-            True if all cards have valid rank and suit values
-        """
-        for card_id in self.registered_cards:
-            rank, suit = self.decode_measurement(bitstring, card_id)
-            if rank is None or suit is None:
-                return False
-        return True
-
-    def decode_measurement(self, bitstring: str, card_id: str) -> Tuple[str, str]:
-        """
-        Decode a measurement bitstring to extract card rank and suit.
-
-        Args:
-            bitstring: Full measurement bitstring
-            card_id: Card identifier to extract
-
-        Returns:
-            Tuple of (rank, suit) or (None, None) if invalid
-        """
-        if card_id not in self.card_register_map:
-            raise ValueError(f"Card {card_id} not found")
-
-        _, start_idx, end_idx = self.card_register_map[card_id]
-
-        # Extract the 6 bits for this card
-        # Bitstring is reversed in Qiskit
-        total_bits = len(bitstring)
-        card_bits = bitstring[total_bits - end_idx : total_bits - start_idx]
-
-        # Reverse to get correct order
-        card_bits = card_bits[::-1]
-
-        # Extract rank (bits 0-3) and suit (bits 4-5)
-        rank_bits = card_bits[:4]
-        suit_bits = card_bits[4:6]
-
-        rank_val = int(rank_bits, 2)
-        suit_val = int(suit_bits, 2)
-
-        # Validate rank (must be 1-13, excluding 0, 14-15)
-        if rank_val == 0 or rank_val > 13:
-            return None, None
-
-        # Map to rank names
-        rank_map = {
-            1: "Ace",
-            2: "2",
-            3: "3",
-            4: "4",
-            5: "5",
-            6: "6",
-            7: "7",
-            8: "8",
-            9: "9",
-            10: "10",
-            11: "Jack",
-            12: "Queen",
-            13: "King",
-        }
-
-        suit_map = {0: "Spades", 1: "Diamonds", 2: "Clubs", 3: "Hearts"}
-
-        return rank_map.get(rank_val), suit_map.get(suit_val)

@@ -710,7 +710,7 @@ async def trigger_showdown(game_id: str, token: str = Depends(verify_game_access
 async def preview_quantum_operation(
     game_id: str,
     request: QuantumActionRequest,
-    token: str = Depends(verify_game_access)
+    token: str = Depends(verify_game_access),
 ):
     """
     Preview the probability distribution of a quantum operation without applying it.
@@ -767,8 +767,8 @@ async def preview_quantum_operation(
 
         # Decode outcomes and calculate probabilities
         outcome_probs = {}
-        for bitstring, count in results.items():
-            rank, suit = temp_qc.decode_measurement(bitstring, source_card_id)
+        for _, count in results.items():
+            rank, suit = temp_qc.decode_measurement(source_card_id)
             if rank and suit:
                 card_str = f"{rank} of {suit}"
                 prob = count / 1000.0
@@ -779,10 +779,10 @@ async def preview_quantum_operation(
 
         # Sort by probability and return top outcomes
         sorted_outcomes = sorted(
-            outcome_probs.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:5]  # Top 5 most likely outcomes
+            outcome_probs.items(), key=lambda x: x[1], reverse=True
+        )[
+            :5
+        ]  # Top 5 most likely outcomes
 
         return {
             "source_card": f"{source_card.rank} of {source_card.suit}",
@@ -792,7 +792,7 @@ async def preview_quantum_operation(
             "outcomes": [
                 {"card": card, "probability": round(prob * 100, 1)}
                 for card, prob in sorted_outcomes
-            ]
+            ],
         }
 
     except Exception as e:

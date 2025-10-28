@@ -860,7 +860,7 @@ class QuantumPoker:
 
         for card_id in self.qc_manager.registered_cards:
             # decode all cards (quantum or classical)
-            rank, suit = self.qc_manager.decode_card(card_id)
+            rank, suit = self.qc_manager.decode_measurement(card_id)
 
             if not rank or not suit:
                 has_invalid = True
