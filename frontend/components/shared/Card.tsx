@@ -6,6 +6,7 @@ interface CardProps {
   card: CardType;
   className?: string;
   isEntangled?: boolean;
+  quantumEffect?: 'entangled' | 'superposed' | 'phased' | 'none';
 }
 
 const getSuitSymbol = (suit: string): string => {
@@ -32,10 +33,24 @@ const getRankDisplay = (rank: string): string => {
   return rankMap[rank] || rank;
 };
 
-export default function Card({ card, className = '', isEntangled = false }: CardProps) {
+export default function Card({ card, className = '', isEntangled = false, quantumEffect = 'none' }: CardProps) {
   const suitSymbol = getSuitSymbol(card.suit);
   const suitColor = getSuitColor(card.suit);
   const rankDisplay = getRankDisplay(card.rank);
+  
+  // Determine glow effect
+  const getGlowClass = () => {
+    if (quantumEffect === 'entangled' || isEntangled) {
+      return 'ring-2 ring-blue-400 ring-offset-2 shadow-blue-400/50';
+    }
+    if (quantumEffect === 'superposed') {
+      return 'ring-2 ring-green-400 ring-offset-2 shadow-green-400/50';
+    }
+    if (quantumEffect === 'phased') {
+      return 'ring-2 ring-indigo-400 ring-offset-2 shadow-indigo-400/50';
+    }
+    return '';
+  };
   
   return (
     <div 
@@ -45,7 +60,7 @@ export default function Card({ card, className = '', isEntangled = false }: Card
         border-2 border-gray-300
         transition-all duration-200
         hover:scale-105 hover:shadow-xl
-        ${isEntangled ? 'ring-2 ring-purple-500 ring-offset-2 animate-pulse' : ''}
+        ${getGlowClass()}
         ${className || 'w-16 h-24 sm:w-20 sm:h-32'}
       `}
     >
@@ -66,9 +81,13 @@ export default function Card({ card, className = '', isEntangled = false }: Card
         <span className="text-[8px] sm:text-[10px] leading-tight">{suitSymbol}</span>
       </div>
       
-      {/* Quantum entanglement effect */}
-      {isEntangled && (
-        <div className="absolute inset-0 rounded-lg bg-purple-500/10 pointer-events-none" />
+      {/* Quantum effects overlay */}
+      {(isEntangled || quantumEffect !== 'none') && (
+        <div className={`absolute inset-0 rounded-lg pointer-events-none ${
+          quantumEffect === 'entangled' || isEntangled ? 'bg-blue-500/10' :
+          quantumEffect === 'superposed' ? 'bg-green-500/10' :
+          quantumEffect === 'phased' ? 'bg-indigo-500/10' : ''
+        }`} />
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import { useGameWebSocket } from '@/hooks/useGameWebSocket';
 import PokerTable from '@/components/game/PokerTable';
 import BettingControls from '@/components/game/BettingControls';
 import QuantumEntangle from '@/components/game/QuantumEntangle';
+import QuantumIndicators from '@/components/game/QuantumIndicators';
 import { api } from '@/lib/api';
 import { ArrowLeft, Loader2, Users, Play, Copy, Check, HelpCircle, X } from 'lucide-react';
 
@@ -395,35 +396,12 @@ export default function GamePage() {
                 </div>
               </div>
               
-              {/* Quantum Operations History */}
-              {myPlayer && myPlayer.entanglement_history && myPlayer.entanglement_history.length > 0 && (
-                <div className="bg-gray-900 rounded-xl p-4 border-2 border-purple-700">
-                  <h3 className="text-purple-400 font-bold mb-3 flex items-center gap-2">
-                    <span className="text-xl">⚛️</span>
-                    <span>Quantum Operations</span>
-                    <span className="text-xs bg-purple-600/50 text-purple-200 px-2 py-0.5 rounded-full">
-                      {myPlayer.entanglement_history.length}
-                    </span>
-                  </h3>
-                  <div className="space-y-2">
-                    {myPlayer.entanglement_history.map((ent, idx) => (
-                      <div key={idx} className="bg-gray-800 rounded-lg p-3 border border-purple-900">
-                        <div className="text-purple-300 font-medium mb-1 text-sm">
-                          {ent.target === 'SELF' ? (
-                            <>⚛️ {formatCardId(ent.source)} → Superposition</>
-                          ) : ent.target === 'PHASE' ? (
-                            <>〰️ {formatCardId(ent.source)} → Phase Interference</>
-                          ) : (
-                            <>🔗 {formatCardId(ent.source)} ↔ {formatCardId(ent.target)}</>
-                          )}
-                        </div>
-                        <div className="text-gray-400 text-xs">
-                          {ent.effect} rank change (Bit {ent.bit})
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {/* Quantum Operations Indicator - Shows all players' operations */}
+              {players && players.length > 0 && (
+                <QuantumIndicators 
+                  players={players}
+                  myPlayerNumber={myPlayerNumber || 1}
+                />
               )}
             </div>
           </div>
