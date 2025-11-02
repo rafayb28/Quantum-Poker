@@ -1441,22 +1441,31 @@ class QuantumPoker:
 
 def example_game():
     """
-    Example game flow demonstrating quantum entanglement.
+    Example game flow demonstrating quantum operations.
     """
     print("=== Quantum Poker Example Game ===\n")
 
     # Create game with 2 players
     game = QuantumPoker(num_players=2)
+    
+    # Set player names
+    game.players[0].name = "Alice"
+    game.players[1].name = "Bob"
 
-    # Deal hole cards
-    print("Dealing hole cards...")
-    game.deal_hole_cards()
+    # Start the game (deals cards and posts blinds)
+    print("Starting game...")
+    game.start_game()
 
     print("\nPlayer hands (identifiers):")
     for player in game.players:
         print(
             f"{player.name}: {player.hand[0].identifier}, {player.hand[1].identifier}"
         )
+
+    # Skip pre-flop betting for demo purposes
+    print("\n(Skipping pre-flop betting for demo...)")
+    game.current_round = "pre-flop"
+    game.betting_round_active = False
 
     # Deal flop
     print("\nDealing flop...")

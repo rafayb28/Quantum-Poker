@@ -522,20 +522,23 @@ export default function GamePage() {
               <div className="bg-gray-800 rounded-lg p-4 border border-indigo-700">
                 <h3 className="text-xl font-bold text-indigo-400 mb-3 flex items-center gap-2">
                   <span className="text-2xl">〰️</span>
-                  Phase Interference (Z Gate)
+                  Phase Interference (RZ Gate)
                 </h3>
-                <p className="text-gray-300 mb-3">Applies a phase shift to a bit - changes measurement probabilities when combined with other operations.</p>
+                <p className="text-gray-300 mb-3">Apply phase rotation with adjustable angle (0-360°) to control interference patterns and bias probabilities.</p>
                 <div className="bg-gray-900 rounded p-3 space-y-2">
-                  <div className="font-bold text-indigo-300">Advanced Technique</div>
+                  <div className="font-bold text-indigo-300">Example: 7♠ → Bit 0 with Phase</div>
                   <div className="text-sm text-gray-300 space-y-1">
-                    <div>• Z gate alone doesn't change measurement</div>
-                    <div>• Creates interference patterns with entanglement</div>
-                    <div>• Can bias outcomes when multiple operations combine</div>
-                    <div>• Strategic for controlling quantum correlations</div>
+                    <div>• Put bit into superposition (H gate)</div>
+                    <div>• Apply phase rotation at chosen angle (RZ)</div>
+                    <div>• Apply superposition again (H gate)</div>
+                    <div className="mt-2 text-yellow-400">Results:</div>
+                    <div className="ml-4">• 180°: Guarantees bit flip (7→6 or 8)</div>
+                    <div className="ml-4">• Other angles: Bias toward specific outcomes</div>
+                    <div className="ml-4">• 0°/360°: No effect (50/50)</div>
                   </div>
                 </div>
                 <div className="mt-3 text-sm text-gray-400">
-                  <strong>Cost:</strong> 1 quantum chip | <strong>Use:</strong> Combine with entanglement for control
+                  <strong>Cost:</strong> 1 quantum chip | <strong>Use:</strong> Strategic probability control
                 </div>
               </div>
 

@@ -52,7 +52,7 @@ export default function LoginPage() {
             <span className="text-6xl">⚛️</span>
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Quantum Poker</h1>
-          <p className="text-gray-400">Experience poker with quantum entanglement</p>
+          <p className="text-gray-400">Experience poker with quantum mechanics</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

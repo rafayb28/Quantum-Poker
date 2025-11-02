@@ -1,17 +1,18 @@
 # Quantum Poker
 
-Texas Hold'em poker with quantum entanglement mechanics. Cards can be superposed and entangled, collapsing to definite values only at showdown.
+Texas Hold'em poker with quantum mechanics. Players can manipulate cards using quantum operations including superposition, phase interference, and entanglement. Cards collapse to definite values at showdown based on quantum measurement.
 
 ## Quick Start
 
-### Backend
+### Backend Setup
 ```bash
 pip install -r requirements.txt
-python main.py
+cd src
+uvicorn api:app --reload
 ```
 Runs on `http://localhost:8000`
 
-### Frontend
+### Frontend Setup
 ```bash
 cd frontend
 npm install
@@ -19,37 +20,48 @@ npm run dev
 ```
 Runs on `http://localhost:3000`
 
-See [TESTING.md](TESTING.md) for detailed testing instructions.
+### Running Tests
+```bash
+pytest tests/ -v
+```
+
+### Demo Game
+To see a command-line demonstration of quantum operations:
+```bash
+python main.py
+```
 
 ## Features
 
-**Poker Mechanics:**
-- Full Texas Hold'em rules (pre-flop, flop, turn, river, showdown)
-- All betting actions (fold, check, call, raise, all-in)
-- Side pots for all-in scenarios
+### Poker Mechanics
+- Full Texas Hold'em rules with all betting rounds (pre-flop, flop, turn, river, showdown)
+- Complete betting actions: fold, check, call, raise, all-in
+- Side pot management for complex all-in scenarios
 - 2-6 player support
-- Real-time WebSocket updates
+- Real-time updates via WebSocket
 
-**Quantum Mechanics:**
-- Quantum entanglement between player cards
-- H+CNOT gates on rank bits (0-2)
-- Superposition maintained until showdown
-- 2 quantum chips per player per hand
+### Quantum Mechanics
+- Three quantum operations: Superposition, Phase Interference, and Entanglement
+- Quantum gates: H (Hadamard), RZ (Phase Rotation), CNOT (Entanglement)
+- Manipulate rank bits 0-2 for strategic card variation
+- Cards remain in superposition until showdown measurement
+- 2 quantum chips allocated per player per hand
 
 ## Tech Stack
 
-**Backend:**
+### Backend
 - Python 3.10+
-- FastAPI (REST API)
-- Qiskit (quantum circuits)
-- pytest (73 tests passing)
+- FastAPI with Uvicorn
+- Qiskit for quantum circuit simulation
+- WebSocket for real-time communication
+- pytest with 73 passing tests
 
-**Frontend:**
-- Next.js 14 (App Router)
+### Frontend
+- Next.js 14 with App Router
 - TypeScript
-- Tailwind CSS
-- Zustand (state management)
-- WebSocket (real-time)
+- Tailwind CSS for styling
+- Zustand for state management
+- WebSocket client for real-time updates
 
 ## How Quantum Works
 
@@ -59,27 +71,39 @@ Each card is a 6-bit register (0-51 encoding 52 cards):
 - **Bits 4-5**: Suit (0=Spades, 1=Diamonds, 2=Clubs, 3=Hearts)
 - Invalid values (13-15 for rank, 52-63 overall) are rejected
 
-### Entanglement Mechanics
+### Quantum Operations
 
-Players can entangle their hole cards with opponent cards using quantum chips:
+#### 1. Superposition
+- Gate: Hadamard (H)
+- Cost: 1 quantum chip
+- Target: Own card only
+- Effect: Puts a card bit into equal superposition, creating 50/50 probability of bit flip
 
-1. **Cost**: 1 quantum chip per entanglement
-2. **Target**: Any opponent's hole card
-3. **Bits affected**: Rank bits 0-2 only (suit remains unchanged)
-4. **Operation**: Hadamard gate + CNOT gate creates superposition
+#### 2. Phase Interference
+- Gate: RZ(angle) with configurable rotation angle
+- Cost: 1 quantum chip
+- Angle: 0-360 degrees (adjustable via slider)
+- Target: Own card only
+- Effect: When combined with superposition (H-RZ-H sequence), controls quantum interference
+  - 180 degrees: Guaranteed bit flip
+  - Other angles: Biased probabilities toward specific outcomes
+  - 0/360 degrees: No effect
 
-**Impact levels:**
-- **Bit 0**: ±1 rank variation (e.g., 7 ↔ 6 or 8)
-- **Bit 1**: ±2 rank variation (e.g., 7 ↔ 5 or 9)  
-- **Bit 2**: ±4 rank variation (e.g., 7 ↔ 3 or 11)
+#### 3. Entanglement
+- Gates: Hadamard + CNOT (H+CNOT)
+- Cost: 1 chip for own/community cards, 2 chips for opponent cards
+- Target: Any card (own, community, or opponent)
+- Effect: Creates quantum correlation between two cards so they change together
 
-### Quantum Circuit
+#### Bit Manipulation Impact
+Only rank bits 0-2 can be manipulated (suit is immutable):
+- Bit 0: Plus or minus 1 rank (example: 7 becomes 6 or 8)
+- Bit 1: Plus or minus 2 ranks (example: 7 becomes 5 or 9)
+- Bit 2: Plus or minus 4 ranks (example: 7 becomes 3 or 11)
 
-$$\text{Given two states } |A\rangle, |B\rangle \text{ we entangle qubit } x: \\
-\text{1. Apply H onto } |A_x\rangle \\
-\text{2. Apply } \text{CNOT}_{A_x \rightarrow B_x}$$
+### Measurement and Circuit Behavior
 
-All cards exist in a global quantum circuit. Cards are measured only at showdown, collapsing superposition to definite values.
+All cards exist in a shared quantum circuit managed by Qiskit. Cards remain in superposition throughout all betting rounds. At showdown, only cards that were affected by quantum operations are measured from the circuit using quantum simulation with 2048 shots. Unaffected cards retain their original dealt values. Measurement outcomes follow quantum probability distributions determined by the applied gates and operations.
 
 ## Project Structure
 
@@ -105,46 +129,53 @@ tests/                      # Backend tests (73 passing)
 ## API Endpoints
 
 ### Authentication
-- `POST /auth/session` - Create session
-- `GET /auth/validate` - Validate token
+- POST /auth/session - Create player session and receive token
+- GET /auth/validate - Validate session token
 
 ### Game Management
-- `POST /game/create` - Create game
-- `POST /game/{id}/join` - Join game
-- `POST /game/{id}/start` - Start game
-- `GET /game/{id}/state` - Get state
+- POST /game/create - Create new game instance
+- POST /game/{id}/join - Join existing game
+- POST /game/{id}/start - Start game after all players joined
+- GET /game/{id}/state - Get current game state
+- POST /game/{id}/next-round - Advance to next betting round
 
-### Actions
-- `POST /game/{id}/action` - Perform action (fold/check/call/raise/all-in)
-- `POST /game/{id}/quantum-action` - Entangle cards
-- `POST /game/{id}/showdown` - Trigger showdown
+### Game Actions
+- POST /game/{id}/action - Perform betting action (fold, check, call, raise, all-in)
+- POST /game/{id}/quantum-action - Perform quantum operation (superposition, phase, entanglement)
+- POST /game/{id}/showdown - Trigger showdown and measure quantum states
 
-### WebSocket
-- `ws://localhost:8000/ws/{game_id}/{token}` - Real-time updates
+### Real-Time Communication
+- WebSocket endpoint: ws://localhost:8000/ws/{game_id}/{token}
+- Broadcasts game state updates to all connected players
 
 ## Development
 
-### Run Tests
+### Backend Development
+Start the FastAPI server with auto-reload:
 ```bash
-pytest tests/ -v
+cd src
+uvicorn api:app --reload
 ```
 
-### Run Backend
-```bash
-python main.py
-```
-
-### Run Frontend
+### Frontend Development
+Start the Next.js development server:
 ```bash
 cd frontend
 npm run dev
 ```
 
-## Documentation
+### Testing
+Run the full test suite:
+```bash
+pytest tests/ -v
+```
 
-- [TESTING.md](TESTING.md) - Complete testing guide
-- [docs/QUICKSTART.md](docs/QUICKSTART.md) - Setup instructions
-- [docs/ROADMAP.md](docs/ROADMAP.md) - Development roadmap
+## Additional Documentation
+
+- docs/QUICKSTART.md - Detailed setup guide
+- docs/ROADMAP.md - Development roadmap and future features
+- docs/AUTHENTICATION.md - Session management details
+- docs/FRONTEND_STRUCTURE.md - Frontend architecture overview
 
 ## License
 
