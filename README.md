@@ -4,6 +4,9 @@ Texas Hold'em poker with quantum mechanics. Players can manipulate cards using q
 
 ## Quick Start
 
+# HOSTED (use this url, no need to run):
+quantum.pkrm.dev
+
 ### Backend Setup
 ```bash
 pip install -r requirements.txt
@@ -19,11 +22,6 @@ npm install
 npm run dev
 ```
 Runs on `http://localhost:3000`
-
-### Running Tests
-```bash
-pytest tests/ -v
-```
 
 ### Demo Game
 To see a command-line demonstration of quantum operations:
@@ -54,7 +52,6 @@ python main.py
 - FastAPI with Uvicorn
 - Qiskit for quantum circuit simulation
 - WebSocket for real-time communication
-- pytest with 73 passing tests
 
 ### Frontend
 - Next.js 14 with App Router
@@ -122,8 +119,6 @@ frontend/
   ├── store/                # Zustand state
   ├── hooks/                # Custom hooks
   └── lib/                  # API client
-
-tests/                      # Backend tests (73 passing)
 ```
 
 ## API Endpoints
@@ -162,12 +157,6 @@ Start the Next.js development server:
 ```bash
 cd frontend
 npm run dev
-```
-
-### Testing
-Run the full test suite:
-```bash
-pytest tests/ -v
 ```
 
 ## Additional Documentation
